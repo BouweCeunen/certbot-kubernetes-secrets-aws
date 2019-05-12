@@ -7,7 +7,7 @@ def create_hosted_zone(domain_zone_name):
     print('Creating hostedzone "%s"' % domain_zone_name)
     return boto3.client('route53').create_hosted_zone(
         Name=domain_zone_name,
-        CallerReference='string',
+        CallerReference=str(time.time()),
     )
 
 def create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone):
@@ -56,6 +56,22 @@ def wait_route53(change_id, domain_zone_name):
             return
         time.sleep(10)
 
+def get_domains_hosted_zone(hosted_zones, domain):
+    domains = domain.split('.')
+    hosted_zone = None
+    for zone in hosted_zones:
+        parsed_zone = zone['Name'].rstrip('.').split('.')
+        parsed_domain = domain.split('.')
+        while len(parsed_domain) >= 1 and len(parsed_zone) >= 1:
+            if parsed_domain[-1] != parsed_zone[-1]:
+                break
+            parsed_domain.pop(-1)
+            parsed_zone.pop(-1)
+        if len(parsed_zone) == 0 and len(parsed_domain) <= len(domains):
+            domains = parsed_domain
+            hosted_zone = zone
+    return (hosted_zone, domains)
+
 def create_route53(tls_ingress):
     (_,_,_,ingress_domains) = tls_ingress
 
@@ -65,21 +81,23 @@ def create_route53(tls_ingress):
     print('Found hostedzones: %s' % str(hosted_zone_names))
     
     for domain in ingress_domains:
-        parsed_domain = domain.split('.')
+        (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
+        if hosted_zone == None:
+            print('No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            break
 
-        diff_sets = [[x for x in parsed_domain if x not in set(zone.split('.'))] for zone in hosted_zone_names]
-        diff_sets_lengths = [len(domain_list) for domain_list in diff_sets]
-        smalles_length_index = diff_sets_lengths.index(min(diff_sets_lengths))
+        if len(domains) == 0:
+            domain_zone_name = hosted_zone['Name'].rstrip('.')
+            a_record_result = create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone)
+        else:
+            for idx, domain in enumerate(reversed(domains)):
+                domain_zone_name = domain + '.' + hosted_zone['Name'].rstrip('.')
+                if (idx != len(domains)-1):
+                    hosted_zone = create_hosted_zone(domain_zone_name)['HostedZone']
+                else:
+                    a_record_result = create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone)
 
-        hosted_zone = hosted_zones[smalles_length_index]
-        domains = diff_sets[smalles_length_index]
-        for domain in reversed(domains):
-            domain_zone_name = domain + '.' + hosted_zone['Name'].rstrip('.')
-            if (domains.index(domain) != 0):
-                change_info = create_hosted_zone(domain_zone_name)
-            else:
-                change_info = create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone)
-        change_id = change_info['ChangeInfo']['Id'].replace('/change/', '')
+        change_id = a_record_result['ChangeInfo']['Id'].replace('/change/', '')
         wait_route53(change_id, domain_zone_name)
 
 def remove_route53(tls_ingress):

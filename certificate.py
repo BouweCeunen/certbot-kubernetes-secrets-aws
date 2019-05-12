@@ -1,12 +1,15 @@
 from subprocess import call
 from kubernetes import client, config, utils, watch
-from watch import kubernetesv1, kubernetescorev1, k8s_client
 import sys, time, base64
 import os
 
 EMAIL = os.environ['EMAIL']
 CURRENT_NAMESPACE = open('/var/run/secrets/kubernetes.io/serviceaccount/namespace').read()
 CERTS_BASE_PATH = '/etc/letsencrypt/live'
+
+config.load_incluster_config()
+kubernetesv1 = client.ExtensionsV1beta1Api()
+kubernetescorev1 = client.CoreV1Api()
 
 def remove_letsencrypt_ingress(ingress_name,ingress_domains):
     print('Removing ingress %s for Let\'s Encrypt if it does exist for %s' % (ingress_name,str(ingress_domains)))

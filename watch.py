@@ -4,8 +4,6 @@ from aws import create_route53, remove_route53
 
 config.load_incluster_config()
 kubernetesv1 = client.ExtensionsV1beta1Api()
-kubernetescorev1 = client.CoreV1Api()
-k8s_client = client.ApiClient()
 
 def get_kubernetes_domains_ingresses(event):
     ingress_name = event.metadata.name

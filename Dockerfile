@@ -8,8 +8,9 @@ RUN apk update \
     && apk add --update --no-cache python py-pip 
 RUN pip install idna\<2.6 \
     && pip install requests==2.21.0 \
-    && pip install kubernetes
+    && pip install kubernetes \
+    && pip install boto3
 
-COPY certbot.py certbot.py
+COPY *.py /
 
 ENTRYPOINT ["certbot"]

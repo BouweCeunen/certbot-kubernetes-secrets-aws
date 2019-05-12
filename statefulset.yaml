@@ -17,8 +17,8 @@ spec:
       containers:
       - name: certbot
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets:0.0.4
-        command: ['python','-u','certbot.py']
+        image: bouwe/certbot-kubernetes-secrets-aws:0.0.7
+        command: ['python','-u','watch.py']
         envFrom:
           - configMapRef:
               name: certbot-configmap
