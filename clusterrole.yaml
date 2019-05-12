@@ -1,0 +1,11 @@
+apiVersion: rbac.authorization.k8s.io/v1beta1
+kind: ClusterRole
+metadata:
+  name: certbot
+rules:
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["list","create","get","patch","delete"]
+- apiGroups: ["extensions", "apps"]
+  resources: ["ingresses"]
+  verbs: ["watch","create","get","patch","delete"]

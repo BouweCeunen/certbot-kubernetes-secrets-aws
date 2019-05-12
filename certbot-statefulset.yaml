@@ -1,0 +1,47 @@
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  namespace: default
+  name: certbot
+  labels:
+    app: certbot
+spec:
+  serviceName: certbot
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: certbot
+    spec:
+      serviceAccountName: certbot
+      containers:
+      - name: certbot
+        imagePullPolicy: Always
+        image: bouwe/certbot-kubernetes-secrets:0.0.4
+        command: ['python','-u','certbot.py']
+        envFrom:
+          - configMapRef:
+              name: certbot-configmap
+        ports:
+        - name: web
+          containerPort: 80
+          protocol: TCP
+        resources:
+          limits:
+            cpu: 250m
+            memory: 250Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - name: data
+          mountPath: /etc
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: ssd
+      resources:
+        requests:
+          storage: 1Gi
