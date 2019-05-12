@@ -53,3 +53,4 @@ Attach following policy to your EC2 node role in IAM on AWS.
 ## TODO
 * multithreading
 * option to enable json logging
+* SLACK notifications

@@ -33,7 +33,6 @@ def create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone):
     )
 
 def get_elb_hosted_zone():
-    # get elbs to create alias a records later on
     application_load_balancers = boto3.client('elbv2', region_name=ELB_REGION).describe_load_balancers()['LoadBalancers']
     classic_load_balancers = boto3.client('elb', region_name=ELB_REGION).describe_load_balancers()['LoadBalancerDescriptions']
     load_balancers = application_load_balancers + classic_load_balancers
