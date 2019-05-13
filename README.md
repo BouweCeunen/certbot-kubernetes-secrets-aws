@@ -17,7 +17,9 @@ Attach following policy to your EC2 node role in IAM on AWS.
                 "route53:ChangeResourceRecordSets",
                 "route53:GetChange",
                 "route53:GetChangeDetails",
-                "route53:ListHostedZones"
+                "route53:ListHostedZones",
+                "route53:CreateHostedZone",
+                "route53:DeleteHostedZone"
             ],
             "Resource": [
                 "*"
@@ -29,18 +31,6 @@ Attach following policy to your EC2 node role in IAM on AWS.
             "Action": [
                 "elasticloadbalancing:DescribeLoadBalancers",
                 "elasticloadbalancing:SetLoadBalancerListenerSSLCertificate"
-            ],
-            "Resource": [
-                "*"
-            ]
-        },
-        {
-            "Sid": "",
-            "Effect": "Allow",
-            "Action": [
-                "iam:ListServerCertificates",
-                "iam:GetServerCertificate",
-                "iam:UploadServerCertificate"
             ],
             "Resource": [
                 "*"

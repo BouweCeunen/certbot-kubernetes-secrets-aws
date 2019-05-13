@@ -3,6 +3,14 @@ import boto3, os, time
 ELB_DNS_NAME = os.environ['ELB_DNS_NAME']
 ELB_REGION = os.environ['ELB_REGION']
 
+def delete_hosted_zone(hosted_zone):
+    hosted_zone_name = hosted_zone['Name'].rstrip('.')
+    hosted_zone_id = hosted_zone['Id']
+    print('Deleting hostedzone "%s"' % hosted_zone_name)
+    return boto3.client('route53').delete_hosted_zone(
+        Id=hosted_zone_id,
+    )
+
 def create_hosted_zone(domain_zone_name):
     print('Creating hostedzone "%s"' % domain_zone_name)
     return boto3.client('route53').create_hosted_zone(
@@ -10,14 +18,14 @@ def create_hosted_zone(domain_zone_name):
         CallerReference=str(time.time()),
     )
 
-def create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone):
+def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
     print('Creating domain "%s" in hostedzone "%s"' % (domain_zone_name,hosted_zone['Name'].rstrip('.')))
     return boto3.client('route53').change_resource_record_sets(
         HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
         ChangeBatch={
             'Changes': [
                 {
-                    'Action': 'UPSERT',
+                    'Action': action,
                     'ResourceRecordSet': {
                         'Name': domain_zone_name,
                         'Type': 'A',
@@ -71,13 +79,16 @@ def get_domains_hosted_zone(hosted_zones, domain):
             hosted_zone = zone
     return (hosted_zone, domains)
 
-def create_route53(tls_ingress):
-    (_,_,_,ingress_domains) = tls_ingress
-
-    elb_hosted_zone = get_elb_hosted_zone()
+def get_hosted_zones():
     hosted_zones = boto3.client('route53').list_hosted_zones()['HostedZones']
     hosted_zone_names = [zone['Name'].rstrip('.') for zone in hosted_zones]
     print('Found hostedzones: %s' % str(hosted_zone_names))
+    return (hosted_zones, hosted_zone_names)
+
+def create_route53(tls_ingress):
+    (_,_,_,ingress_domains) = tls_ingress
+    elb_hosted_zone = get_elb_hosted_zone()
+    (hosted_zones, hosted_zone_names) = get_hosted_zones()
     
     for domain in ingress_domains:
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
@@ -87,18 +98,37 @@ def create_route53(tls_ingress):
 
         if len(domains) == 0:
             domain_zone_name = hosted_zone['Name'].rstrip('.')
-            a_record_result = create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone)
+            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
         else:
             for idx, domain in enumerate(reversed(domains)):
                 domain_zone_name = domain + '.' + hosted_zone['Name'].rstrip('.')
                 if (idx != len(domains)-1):
                     hosted_zone = create_hosted_zone(domain_zone_name)['HostedZone']
                 else:
-                    a_record_result = create_record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone)
+                    a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
 
         change_id = a_record_result['ChangeInfo']['Id'].replace('/change/', '')
         wait_route53(change_id, domain_zone_name)
 
 def remove_route53(tls_ingress):
     (_,_,_,ingress_domains) = tls_ingress
+    elb_hosted_zone = get_elb_hosted_zone()
+    (hosted_zones, hosted_zone_names) = get_hosted_zones()
 
+    for domain in ingress_domains:
+        (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
+        if hosted_zone == None:
+            print('No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            break
+
+        if len(domains) == 0:
+            domain_zone_name = hosted_zone['Name'].rstrip('.')
+            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+        elif len(domains) == 1:
+            domain_zone_name = domains[0] + '.' + hosted_zone['Name'].rstrip('.')
+            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+        else:
+            print('No top zone found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            break
+
+        delete_hosted_zone(hosted_zone)

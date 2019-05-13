@@ -90,18 +90,19 @@ def delete_certificate(ingress_name,secret_name,namespace):
 def request_certificate(ingress_domains,secret_name,namespace):
     print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
     command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
-    call(command, stdout=open('certbot_log', 'w'))
+    code = call(command, stdout=open('certbot_log', 'w'))
     print(open('certbot_log', 'r').read())
     call('rm certbot_log'.split())
 
-    try:
-        cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
-        key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
-        
-        upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
-    except Exception as e:
-        pass
-        
+    if (code != 0):
+        print('Failed at renewing certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
+        return
+
+    cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
+    key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
+    
+    upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
+
 def create_certificate(tls_ingress):
     (ingress_name,namespace,secret_name,ingress_domains) = tls_ingress
     create_letsencrypt_ingress(ingress_name, ingress_domains)
