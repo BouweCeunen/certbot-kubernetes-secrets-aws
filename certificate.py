@@ -1,7 +1,7 @@
 from subprocess import call
 from kubernetes import client, config, utils, watch
-import sys, time, base64
-import os
+from function import notify
+import sys, time, base64, os
 
 EMAIL = os.environ['EMAIL']
 CURRENT_NAMESPACE = open('/var/run/secrets/kubernetes.io/serviceaccount/namespace').read()
@@ -95,7 +95,8 @@ def request_certificate(ingress_domains,secret_name,namespace):
     call('rm certbot_log'.split())
 
     if (code != 0):
-        print('Failed at renewing certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
+        message = 'Failed at renewing certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
+        notify(message)
         return
 
     cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
@@ -104,11 +105,11 @@ def request_certificate(ingress_domains,secret_name,namespace):
     upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
 
 def create_certificate(tls_ingress):
-    (ingress_name,namespace,secret_name,ingress_domains) = tls_ingress
+    (ingress_name,namespace,secret_name,ingress_domains,_) = tls_ingress
     create_letsencrypt_ingress(ingress_name, ingress_domains)
     request_certificate(ingress_domains, secret_name, namespace)
 
 def remove_certificate(tls_ingress):
-    (ingress_name,namespace,secret_name,ingress_domains) = tls_ingress
+    (ingress_name,namespace,secret_name,ingress_domains,_) = tls_ingress
     remove_letsencrypt_ingress(ingress_name, ingress_domains)
     delete_certificate(ingress_name, secret_name, namespace)

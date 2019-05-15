@@ -5,5 +5,4 @@ metadata:
   namespace: default
 data:
     EMAIL: bouwe.ceunen@gmail.com
-    ELB_DNS_NAME: a4d9acea544d511e9aef50ae120ed3e3-483026455.us-east-1.elb.amazonaws.com
-    ELB_REGION: us-east-1
+    SLACK_WEBHOOK: https://hooks.slack.com/services/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

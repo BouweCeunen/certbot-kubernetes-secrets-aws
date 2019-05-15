@@ -29,8 +29,7 @@ Attach following policy to your EC2 node role in IAM on AWS.
             "Sid": "",
             "Effect": "Allow",
             "Action": [
-                "elasticloadbalancing:DescribeLoadBalancers",
-                "elasticloadbalancing:SetLoadBalancerListenerSSLCertificate"
+                "elasticloadbalancing:DescribeLoadBalancers"
             ],
             "Resource": [
                 "*"
@@ -40,7 +39,37 @@ Attach following policy to your EC2 node role in IAM on AWS.
 }
 ```
 
+## Ingress Annotations
+
+Several annotations need to be present on the Ingress in order to set Route53 records. 
+* certbot.kubernetes.secrets.aws/elb-dns-name
+* certbot.kubernetes.secrets.aws/elb-region
+
+```
+kind: Ingress
+apiVersion: extensions/v1beta1
+metadata:
+  name: cluster-ingress
+  namespace: kube-system
+  annotations:
+    ingress.kubernetes.io/ssl-redirect: 'true'
+    ingress.kubernetes.io/auth-type: forward
+    ingress.kubernetes.io/auth-url: http://traefik-forward-auth.kube-system.svc.cluster.local
+    ingress.kubernetes.io/auth-response-headers: X-Forwarded-User
+    certbot.kubernetes.secrets.aws/elb-dns-name: a4d9acea544d511e9aef50ae120ed3e3-483026455.us-east-1.elb.amazonaws.com
+    certbot.kubernetes.secrets.aws/elb-region: us-east-1
+spec:
+  rules:
+  - host: cluster.k8s.bouweceunen.com
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: kubernetes-dashboard
+          servicePort: web
+  tls:
+  - secretName: cluster-cert
+```
+
 ## TODO
-* multithreading
-* option to enable json logging
-* SLACK notifications
+* json logging

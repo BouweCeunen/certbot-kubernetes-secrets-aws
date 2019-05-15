@@ -1,26 +1,26 @@
 import boto3, os, time
+from function import notify
 
-ELB_DNS_NAME = os.environ['ELB_DNS_NAME']
-ELB_REGION = os.environ['ELB_REGION']
+route53_client = boto3.client('route53')
 
 def delete_hosted_zone(hosted_zone):
     hosted_zone_name = hosted_zone['Name'].rstrip('.')
-    hosted_zone_id = hosted_zone['Id']
+    hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/','')
     print('Deleting hostedzone "%s"' % hosted_zone_name)
-    return boto3.client('route53').delete_hosted_zone(
+    return route53_client.delete_hosted_zone(
         Id=hosted_zone_id,
     )
 
 def create_hosted_zone(domain_zone_name):
     print('Creating hostedzone "%s"' % domain_zone_name)
-    return boto3.client('route53').create_hosted_zone(
+    return route53_client.create_hosted_zone(
         Name=domain_zone_name,
         CallerReference=str(time.time()),
     )
 
 def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
     print('Creating domain "%s" in hostedzone "%s"' % (domain_zone_name,hosted_zone['Name'].rstrip('.')))
-    return boto3.client('route53').change_resource_record_sets(
+    return route53_client.change_resource_record_sets(
         HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
         ChangeBatch={
             'Changes': [
@@ -31,7 +31,7 @@ def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
                         'Type': 'A',
                         'AliasTarget': {
                             'HostedZoneId': elb_hosted_zone['CanonicalHostedZoneNameID'],
-                            'DNSName': ELB_DNS_NAME,
+                            'DNSName': elb_hosted_zone['DNSName'],
                             'EvaluateTargetHealth': False
                         }
                     }
@@ -40,29 +40,41 @@ def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
         }
     )
 
-def get_elb_hosted_zone():
-    application_load_balancers = boto3.client('elbv2', region_name=ELB_REGION).describe_load_balancers()['LoadBalancers']
-    classic_load_balancers = boto3.client('elb', region_name=ELB_REGION).describe_load_balancers()['LoadBalancerDescriptions']
+def get_elb_hosted_zone(tls_ingress):
+    (_,_,_,_,elb_region,elb_dns_name) = tls_ingress
+
+    # no Route53 has to be done
+    if elb_region is None or elb_dns_name is None:
+        return None
+
+    application_load_balancers = boto3.client('elbv2', region_name=elb_region).describe_load_balancers()['LoadBalancers']
+    classic_load_balancers = boto3.client('elb', region_name=elb_region).describe_load_balancers()['LoadBalancerDescriptions']
     load_balancers = application_load_balancers + classic_load_balancers
     load_balancer_dns_names = [elb['DNSName'] for elb in load_balancers]
 
     try:
-        index = load_balancer_dns_names.index(ELB_DNS_NAME)
+        index = load_balancer_dns_names.index(elb_dns_name)
         return load_balancers[index]
     except ValueError:
-        print('ELB with dns_name %s not found in region %s' % (ELB_DNS_NAME, ELB_REGION))
+        message = 'ELB with dns_name %s not found in region %s' % (elb_dns_name, elb_region)
+        notify(message)
         exit(1)
 
-
 def wait_route53(change_id, domain_zone_name):
-    while True:
-        response = boto3.client('route53').get_change(Id=change_id)
-        status = response["ChangeInfo"]["Status"]
-        print('DNS propagation for %s is %s' % (domain_zone_name,status))
-        if status == "INSYNC":
-            return
-        time.sleep(10)
-
+    try: 
+        # wait 5 minutes (300 seconds)
+        for i in range(31):
+            if i == 30:
+                raise TimeoutError()
+            response = route53_client.get_change(Id=change_id)
+            status = response["ChangeInfo"]["Status"]
+            print('DNS propagation for %s is %s' % (domain_zone_name,status))
+            if status == "INSYNC":
+                return True
+            time.sleep(10)
+    except TimeoutError:
+        return False
+    
 def get_domains_hosted_zone(hosted_zones, domain):
     domains = domain.split('.')
     hosted_zone = None
@@ -80,20 +92,20 @@ def get_domains_hosted_zone(hosted_zones, domain):
     return (hosted_zone, domains)
 
 def get_hosted_zones():
-    hosted_zones = boto3.client('route53').list_hosted_zones()['HostedZones']
+    hosted_zones = route53_client.list_hosted_zones()['HostedZones']
     hosted_zone_names = [zone['Name'].rstrip('.') for zone in hosted_zones]
     print('Found hostedzones: %s' % str(hosted_zone_names))
     return (hosted_zones, hosted_zone_names)
 
-def create_route53(tls_ingress):
-    (_,_,_,ingress_domains) = tls_ingress
-    elb_hosted_zone = get_elb_hosted_zone()
+def create_route53(tls_ingress, elb_hosted_zone):
+    (_,_,_,ingress_domains,_) = tls_ingress
     (hosted_zones, hosted_zone_names) = get_hosted_zones()
     
     for domain in ingress_domains:
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
         if hosted_zone == None:
-            print('No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            message = 'No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
+            notify(message)
             break
 
         if len(domains) == 0:
@@ -108,27 +120,36 @@ def create_route53(tls_ingress):
                     a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
 
         change_id = a_record_result['ChangeInfo']['Id'].replace('/change/', '')
-        wait_route53(change_id, domain_zone_name)
+        wait_result = wait_route53(change_id, domain_zone_name)
+        if (not wait_result):
+            message = 'Timeout waiting for DNS with domain_zone_name %s' % (domain_zone_name)
+            notify(message)
 
-def remove_route53(tls_ingress):
-    (_,_,_,ingress_domains) = tls_ingress
-    elb_hosted_zone = get_elb_hosted_zone()
+def remove_route53(tls_ingress, elb_hosted_zone):
+    (_,_,_,ingress_domains,_) = tls_ingress
     (hosted_zones, hosted_zone_names) = get_hosted_zones()
 
     for domain in ingress_domains:
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
         if hosted_zone == None:
-            print('No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            message = 'No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
+            notify(message)
             break
 
+        hosted_zone_name = hosted_zone['Name'].rstrip('.')
+        hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
         if len(domains) == 0:
-            domain_zone_name = hosted_zone['Name'].rstrip('.')
-            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+            domain_zone_name = hosted_zone_name
+            record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
         elif len(domains) == 1:
-            domain_zone_name = domains[0] + '.' + hosted_zone['Name'].rstrip('.')
-            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+            domain_zone_name = domains[0] + '.' + hosted_zone_name
+            record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
         else:
-            print('No top zone found for domain %s in hosted zones %s' % (domain, hosted_zone_names))
+            message = 'No top zone found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
+            notify(message)
             break
 
-        delete_hosted_zone(hosted_zone)
+        # delete hosted zone when only NS and SOA are present
+        hosted_zone = route53_client.get_hosted_zone(Id=hosted_zone_id)['HostedZone']
+        if hosted_zone['ResourceRecordSetCount'] <= 2:
+            delete_hosted_zone(hosted_zone)
