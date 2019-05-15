@@ -10,10 +10,12 @@ def get_annotations(annotations):
     if annotations is None:
         return (None, None)
 
+    elb_dns_name = None
+    elb_region = None
     if 'certbot.kubernetes.secrets.aws/elb-dns-name' in annotations:
-        elb_dns_name = event.metadata.annotations['certbot.kubernetes.secrets.aws/elb-dns-name']
+        elb_dns_name = annotations['certbot.kubernetes.secrets.aws/elb-dns-name']
     if 'certbot.kubernetes.secrets.aws/elb-region' in annotations:
-        elb_region = event.metadata.annotations['certbot.kubernetes.secrets.aws/elb-region']
+        elb_region = annotations['certbot.kubernetes.secrets.aws/elb-region']
 
     return (elb_dns_name, elb_region)
 

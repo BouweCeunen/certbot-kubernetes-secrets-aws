@@ -98,7 +98,7 @@ def get_hosted_zones():
     return (hosted_zones, hosted_zone_names)
 
 def create_route53(tls_ingress, elb_hosted_zone):
-    (_,_,_,ingress_domains,_) = tls_ingress
+    (_,_,_,ingress_domains,_,_) = tls_ingress
     (hosted_zones, hosted_zone_names) = get_hosted_zones()
     
     for domain in ingress_domains:
@@ -126,7 +126,7 @@ def create_route53(tls_ingress, elb_hosted_zone):
             notify(message)
 
 def remove_route53(tls_ingress, elb_hosted_zone):
-    (_,_,_,ingress_domains,_) = tls_ingress
+    (_,_,_,ingress_domains,_,_) = tls_ingress
     (hosted_zones, hosted_zone_names) = get_hosted_zones()
 
     for domain in ingress_domains:

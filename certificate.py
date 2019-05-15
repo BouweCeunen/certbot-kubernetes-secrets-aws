@@ -105,11 +105,11 @@ def request_certificate(ingress_domains,secret_name,namespace):
     upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
 
 def create_certificate(tls_ingress):
-    (ingress_name,namespace,secret_name,ingress_domains,_) = tls_ingress
+    (ingress_name,namespace,secret_name,ingress_domains,_,_) = tls_ingress
     create_letsencrypt_ingress(ingress_name, ingress_domains)
     request_certificate(ingress_domains, secret_name, namespace)
 
 def remove_certificate(tls_ingress):
-    (ingress_name,namespace,secret_name,ingress_domains,_) = tls_ingress
+    (ingress_name,namespace,secret_name,ingress_domains,_,_) = tls_ingress
     remove_letsencrypt_ingress(ingress_name, ingress_domains)
     delete_certificate(ingress_name, secret_name, namespace)
