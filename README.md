@@ -8,6 +8,10 @@ Obtains Let's Encrypt certificates, pushes these as Secrets on Kubernetes for In
 kubectl apply -f kubernetes/
 ```
 
+The configmap contains environment variables which can be used to configure Slack notifications and are used for Let's Encrypt certficate requests.
+* EMAIL
+* SLACK_WEBHOOK
+
 ## AWS Policy
 Attach following policy to your EC2 node role in IAM on AWS in order for Route53 entries to be manipulated.
 
