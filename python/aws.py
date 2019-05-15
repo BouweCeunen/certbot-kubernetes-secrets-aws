@@ -57,7 +57,7 @@ def get_elb_hosted_zone(tls_ingress):
         return load_balancers[index]
     except ValueError:
         message = 'ELB with dns_name %s not found in region %s' % (elb_dns_name, elb_region)
-        notify(message)
+        notify(message, 'danger')
         exit(1)
 
 def wait_route53(change_id, domain_zone_name):
@@ -105,7 +105,7 @@ def create_route53(tls_ingress, elb_hosted_zone):
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
         if hosted_zone == None:
             message = 'No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
-            notify(message)
+            notify(message, 'danger')
             break
 
         if len(domains) == 0:
@@ -123,7 +123,7 @@ def create_route53(tls_ingress, elb_hosted_zone):
         wait_result = wait_route53(change_id, domain_zone_name)
         if (not wait_result):
             message = 'Timeout waiting for DNS with domain_zone_name %s' % (domain_zone_name)
-            notify(message)
+            notify(message, 'danger')
 
 def remove_route53(tls_ingress, elb_hosted_zone):
     (_,_,_,ingress_domains,_,_) = tls_ingress
@@ -133,7 +133,7 @@ def remove_route53(tls_ingress, elb_hosted_zone):
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
         if hosted_zone == None:
             message = 'No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
-            notify(message)
+            notify(message, 'danger')
             break
 
         hosted_zone_name = hosted_zone['Name'].rstrip('.')
@@ -146,7 +146,7 @@ def remove_route53(tls_ingress, elb_hosted_zone):
             record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
         else:
             message = 'No top zone found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
-            notify(message)
+            notify(message, 'danger')
             break
 
         # delete hosted zone when only NS and SOA are present

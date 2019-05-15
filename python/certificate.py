@@ -96,7 +96,7 @@ def request_certificate(ingress_domains,secret_name,namespace):
 
     if (code != 0):
         message = 'Failed at renewing certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
-        notify(message)
+        notify(message, 'danger')
         return
 
     cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
