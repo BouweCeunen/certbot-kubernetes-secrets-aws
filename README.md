@@ -3,8 +3,13 @@ Obtains Let's Encrypt certificates, pushes these as Secrets on Kubernetes for In
 
 [![DockerHub Badge](https://dockeri.co/image/bouwe/certbot-kubernetes-secrets-aws)](https://hub.docker.com/r/bouwe/certbot-kubernetes-secrets-aws)
 
+## Installation
+```
+kubectl apply -f kubernetes/
+```
+
 ## AWS Policy
-Attach following policy to your EC2 node role in IAM on AWS.
+Attach following policy to your EC2 node role in IAM on AWS in order for Route53 entries to be manipulated.
 
 ```
 {
@@ -40,7 +45,6 @@ Attach following policy to your EC2 node role in IAM on AWS.
 ```
 
 ## Ingress Annotations
-
 Several annotations need to be present on the Ingress in order to set Route53 records. 
 * certbot.kubernetes.secrets.aws/elb-dns-name
 * certbot.kubernetes.secrets.aws/elb-region
