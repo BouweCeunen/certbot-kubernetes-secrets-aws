@@ -19,7 +19,7 @@ def create_hosted_zone(domain_zone_name):
     )
 
 def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
-    print('Creating domain "%s" in hostedzone "%s"' % (domain_zone_name,hosted_zone['Name'].rstrip('.')))
+    print('%s domain "%s" in hostedzone "%s"' % (action, domain_zone_name,hosted_zone['Name'].rstrip('.')))
     return route53_client.change_resource_record_sets(
         HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
         ChangeBatch={
@@ -99,14 +99,15 @@ def get_hosted_zones():
 
 def create_route53(tls_ingress, elb_hosted_zone):
     (_,_,_,ingress_domains,_,_) = tls_ingress
-    (hosted_zones, hosted_zone_names) = get_hosted_zones()
+    (hosted_zones, _) = get_hosted_zones()
     
     for domain in ingress_domains:
         (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
         if hosted_zone == None:
-            message = 'No top level domains found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
-            notify(message, 'danger')
-            break
+            # create hostedzone and do retreive logic again
+            create_hosted_zone(domain)
+            (hosted_zones, _) = get_hosted_zones()
+            (hosted_zone, domains) = get_domains_hosted_zone(hosted_zones, domain) 
 
         if len(domains) == 0:
             domain_zone_name = hosted_zone['Name'].rstrip('.')
