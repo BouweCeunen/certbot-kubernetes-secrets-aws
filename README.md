@@ -54,6 +54,8 @@ Several annotations need to be present on the Ingress in order to set Route53 re
 * certbot.kubernetes.secrets.aws/elb-dns-name
 * certbot.kubernetes.secrets.aws/elb-region
 
+Certificates are requested when the 'tls' annotation with a secretName is present on the Ingress.
+
 ```
 kind: Ingress
 apiVersion: extensions/v1beta1
