@@ -8,8 +8,8 @@ except KeyError:
 def notify(message, color):
     print(message)
     json = {
-        "username": "certbot", 
-        "icon_emoji": ":no_entry_sign:",
+        "username": "certbot-kubernetes-secrets-aws", 
+        "icon_emoji": ":dart:",
         "attachments": [
             {
                 "fallback": message,
@@ -21,3 +21,5 @@ def notify(message, color):
     
     if SLACK_WEBHOOK is not None:
         requests.post(SLACK_WEBHOOK, json=json)
+
+# notify("Succesfully renewed certificate dashboard-cert for ['dashboard.k8s.bouweceunen'] in namespace dashboard", "good")

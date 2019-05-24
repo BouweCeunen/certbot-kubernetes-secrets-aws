@@ -53,6 +53,11 @@ Attach following policy to your EC2 node role in IAM on AWS in order for Route53
 }
 ```
 
+## Slack Notifications
+Slack notifications are sent when something goes wrong and if a certificate has been renewed. Setting the environment variable 'SLACK_WEBHOOK' will result in Slack messages being sent.
+
+[![Slack](images/slack.png)](images/slack.png)
+
 ## Ingress Annotations
 Several annotations need to be present on the Ingress in order to set Route53 records. 
 * certbot.kubernetes.secrets.aws/elb-dns-name
