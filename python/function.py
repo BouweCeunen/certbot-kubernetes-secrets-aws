@@ -1,5 +1,10 @@
 import os, requests
 
+try:
+    SLACK_WEBHOOK = os.environ['SLACK_WEBHOOK']
+except KeyError:
+    SLACK_WEBHOOK = None
+
 def notify(message, color):
     print(message)
     json = {
@@ -13,4 +18,6 @@ def notify(message, color):
             }
         ]
     }
-    requests.post(os.environ['SLACK_WEBHOOK'], json=json)
+    
+    if SLACK_WEBHOOK is not None:
+        requests.post(SLACK_WEBHOOK, json=json)

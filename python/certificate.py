@@ -76,7 +76,11 @@ def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
         kubernetescorev1.read_namespaced_secret(secret_name, namespace)
         kubernetescorev1.patch_namespaced_secret(secret_name, namespace, secret)
     except Exception as e:
-        kubernetescorev1.create_namespaced_secret(namespace, secret)
+        try:
+            kubernetescorev1.create_namespaced_secret(namespace, secret)
+        except Exception as e:
+            message = 'Failed at creating secret %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
+            notify(message, 'danger')
 
 def delete_certificate(ingress_name,secret_name,namespace):
     print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
@@ -85,24 +89,31 @@ def delete_certificate(ingress_name,secret_name,namespace):
         kubernetescorev1.read_namespaced_secret(secret_name, namespace)
         kubernetescorev1.delete_namespaced_secret(secret_name, namespace)
     except Exception as e:
+        message = 'Failed at deleting secret %s for %s in namespace %s' % (secret_name, ingress_name, namespace)
+        notify(message, 'danger')
         pass
 
 def request_certificate(ingress_domains,secret_name,namespace):
     print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
     command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
     code = call(command, stdout=open('certbot_log', 'w'))
-    print(open('certbot_log', 'r').read())
+    res = open('certbot_log', 'r').read()
+    print(res)
     call('rm certbot_log'.split())
 
-    if (code != 0):
+    if code != 0:
         message = 'Failed at renewing certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
         notify(message, 'danger')
         return
 
-    cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
-    key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
-    
-    upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
+    if code == 0 and "Certificate not yet due for renewal" not in res:
+        message = 'Succesfully renewed certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
+        notify(message, 'good')
+
+        cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
+        key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
+        
+        upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
 
 def create_certificate(tls_ingress):
     (ingress_name,namespace,secret_name,ingress_domains,_,_) = tls_ingress

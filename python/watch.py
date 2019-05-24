@@ -9,9 +9,26 @@ kubernetesv1 = client.ExtensionsV1beta1Api()
 
 filename_last_resource = '/etc/last_resource_version'
 
+try:
+    DEAULT_ELB_DNS_NAME = os.environ['DEAULT_ELB_DNS_NAME']
+except KeyError:
+    DEAULT_ELB_DNS_NAME = None
+
+try:
+    DEFAULT_ELB_REGION = os.environ['DEFAULT_ELB_REGION']
+except KeyError:
+    DEFAULT_ELB_REGION = None
+
 def get_annotations(annotations):
     if annotations is None:
         return (None, None)
+
+    # first set default (if defaults were set)
+    # will be overwritten when annotations are set on ingresses
+    if DEAULT_ELB_DNS_NAME is not None:
+        elb_dns_name = DEAULT_ELB_DNS_NAME
+    if DEFAULT_ELB_REGION is not None:
+        elb_region = DEFAULT_ELB_REGION
 
     elb_dns_name = None
     elb_region = None
