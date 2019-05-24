@@ -58,7 +58,7 @@ Slack notifications are sent when something goes wrong and if a certificate has 
 
 [![Slack](images/slack_success.png)](images/slack_success.png)
 
-[![Slack](images/slack_fail.png)](images/slack_failure.png)
+[![Slack](images/slack_failure.png)](images/slack_failure.png)
 
 ## Ingress Annotations
 Several annotations need to be present on the Ingress in order to set Route53 records. 
