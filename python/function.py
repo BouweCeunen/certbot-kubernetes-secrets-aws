@@ -22,4 +22,5 @@ def notify(message, color):
     if SLACK_WEBHOOK is not None:
         requests.post(SLACK_WEBHOOK, json=json)
 
-notify("Timeout waiting for DNS with domain_zone_name dashboard.k8s.bouweceunen.com", "danger")
+# notify("Timeout waiting for DNS with domain_zone_name dashboard.k8s.bouweceunen.com", "danger")
+notify("Succesfully renewed certificate dashboard-cert for ['dashboard.k8s.bouweceunen.com'] in namespace dashboard", "good")
