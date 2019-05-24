@@ -8,4 +8,4 @@ rules:
   verbs: ["list","create","get","patch","delete"]
 - apiGroups: ["extensions", "apps"]
   resources: ["ingresses"]
-  verbs: ["watch","create","get","patch","delete"]
+  verbs: ["watch","create","get","patch","delete","list"]

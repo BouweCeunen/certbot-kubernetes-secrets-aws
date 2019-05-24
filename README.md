@@ -9,12 +9,13 @@ kubectl apply -f kubernetes/
 ```
 
 ## Environment Variables
-The configmap contains environment variables which can be used to configure Slack notifications and are used for Let's Encrypt certficate requests. The EMAIL environment variable is mandatory, the rest are optional. If no annotations are set on the ingresses but you would want to use a default elb, you can set the right environment variables so you can just omit these annotations on your ingresses.
+The configmap contains environment variables which can be used to configure Slack notifications and are used for Let's Encrypt certficate requests. The EMAIL environment variable is mandatory, the rest are optional. If no annotations are set on the ingresses but you would want to use a default elb, you can set the right environment variables so you can just omit these annotations on your ingresses. The SLEEP_TIME variable depicts the renewal rate of the certificates, it is set to default 604800 (1 week), meaning that each week all ingresses are traversed in order to see if a renewal is needed.
 
 * EMAIL
 * SLACK_WEBHOOK
 * DEAULT_ELB_DNS_NAME
 * DEAULT_ELB_REGION
+* SLEEP_TIME
 
 ## AWS Policy
 Attach following policy to your EC2 node role in IAM on AWS in order for Route53 entries to be manipulated.
