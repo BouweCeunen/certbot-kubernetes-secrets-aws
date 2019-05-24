@@ -87,4 +87,6 @@ spec:
 ```
 
 ## TODO
-* json logging
+* option to turn on json logging
+* don't upsert Route53 record if already exists
+* renewal of certificates
