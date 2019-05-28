@@ -19,6 +19,9 @@ def get_annotations(annotations):
     if annotations is None:
         return (None, None)
 
+    elb_dns_name = None
+    elb_region = None
+
     # first set default (if defaults were set)
     # will be overwritten when annotations are set on ingresses
     if DEAULT_ELB_DNS_NAME is not None:
@@ -26,8 +29,6 @@ def get_annotations(annotations):
     if DEFAULT_ELB_REGION is not None:
         elb_region = DEFAULT_ELB_REGION
 
-    elb_dns_name = None
-    elb_region = None
     if 'certbot.kubernetes.secrets.aws/elb-dns-name' in annotations:
         elb_dns_name = annotations['certbot.kubernetes.secrets.aws/elb-dns-name']
     if 'certbot.kubernetes.secrets.aws/elb-region' in annotations:

@@ -29,15 +29,17 @@ for event in w.stream(kubernetesv1.list_ingress_for_all_namespaces, _request_tim
 
     if event_type != 'ERROR':
         tls_ingress = get_kubernetes_domains_ingresses(event['object'])
-        if (tls_ingress != None and (event_type == 'ADDED' or event_type == 'MODIFIED')):
+        if (event_type == 'ADDED' or event_type == 'MODIFIED'):
             elb_hosted_zone = get_elb_hosted_zone(tls_ingress)
             if elb_hosted_zone is not None:
                 create_route53(tls_ingress, elb_hosted_zone)
-            create_certificate(tls_ingress)
-        if (tls_ingress != None and event_type == 'DELETED'):
+            if tls_ingress is not None:
+                create_certificate(tls_ingress)
+        if (event_type == 'DELETED'):
             elb_hosted_zone = get_elb_hosted_zone(tls_ingress)
             if elb_hosted_zone is not None:
                 remove_route53(tls_ingress, elb_hosted_zone)
-            remove_certificate(tls_ingress)
+            if tls_ingress is not None:
+                remove_certificate(tls_ingress)
 
     update_last_resource_version(resource_version)

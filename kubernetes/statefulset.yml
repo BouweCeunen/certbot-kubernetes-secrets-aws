@@ -38,7 +38,7 @@ spec:
           mountPath: /etc
       - name: certbot-renewal
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets-aws:1.1.0
+        image: bouwe/certbot-kubernetes-secrets-aws:1.1.1
         command: ['python','-u','renew.py']
         envFrom:
           - configMapRef:
