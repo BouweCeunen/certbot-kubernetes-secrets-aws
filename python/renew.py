@@ -13,9 +13,10 @@ except KeyError:
 
 while True:
     for ingress in kubernetesv1.list_ingress_for_all_namespaces().items:
-        tls_ingress = get_kubernetes_domains_ingresses(ingress)
-        if (tls_ingress != None):
-            create_certificate(tls_ingress)
+        tls = ingress.spec.tls
+        ingress = get_kubernetes_domains_ingresses(ingress)
+        if (tls != None):
+            create_certificate(ingress)
 
-    print('\nGoing to sleep now for %s seconds, will continue with renewal after I wake up\n' % SLEEP_TIME)
+    print('\n\nGoing to sleep now for %s seconds, will continue with renewal after I wake up\n\n' % SLEEP_TIME)
     time.sleep(SLEEP_TIME)

@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: certbot-configmap
+  name: certbot
   namespace: default
 data:
     EMAIL: bouwe.ceunen@gmail.com

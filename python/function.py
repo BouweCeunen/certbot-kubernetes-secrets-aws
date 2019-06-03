@@ -40,14 +40,15 @@ def get_kubernetes_domains_ingresses(event):
     ingress_name = event.metadata.name
     if event.spec.tls != None:
         secret_name = event.spec.tls[0].secret_name
-        namespace = event.metadata.namespace
-        annotations = event.metadata.annotations
-        (elb_dns_name, elb_region) = get_annotations(annotations)
-        ingress_domains = []
-        for h in event.spec.rules:
-            ingress_domains.append(h.host)
-        return (ingress_name,namespace,secret_name,ingress_domains,elb_region,elb_dns_name)
-    return None
+    else:
+        secret_name = None
+    namespace = event.metadata.namespace
+    annotations = event.metadata.annotations
+    (elb_dns_name, elb_region) = get_annotations(annotations)
+    ingress_domains = []
+    for h in event.spec.rules:
+        ingress_domains.append(h.host)
+    return (ingress_name,namespace,secret_name,ingress_domains,elb_region,elb_dns_name)
 
 def notify(message, color):
     print(message)

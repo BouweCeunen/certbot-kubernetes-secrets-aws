@@ -17,11 +17,11 @@ spec:
       containers:
       - name: certbot
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets-aws:1.1.2
+        image: bouwe/certbot-kubernetes-secrets-aws:1.1.5
         command: ['python','-u','watch.py']
         envFrom:
           - configMapRef:
-              name: certbot-configmap
+              name: certbot
         ports:
         - name: web
           containerPort: 80
@@ -38,11 +38,11 @@ spec:
           mountPath: /etc
       - name: certbot-renewal
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets-aws:1.1.2
+        image: bouwe/certbot-kubernetes-secrets-aws:1.1.5
         command: ['python','-u','renew.py']
         envFrom:
           - configMapRef:
-              name: certbot-configmap
+              name: certbot
         ports:
         - name: web
           containerPort: 80

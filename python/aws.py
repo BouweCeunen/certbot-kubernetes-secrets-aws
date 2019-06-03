@@ -40,8 +40,8 @@ def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
         }
     )
 
-def get_elb_hosted_zone(tls_ingress):
-    (_,_,_,_,elb_region,elb_dns_name) = tls_ingress
+def get_elb_hosted_zone(ingress):
+    (_,_,_,_,elb_region,elb_dns_name) = ingress
 
     # no Route53 has to be done
     if elb_region is None or elb_dns_name is None:
