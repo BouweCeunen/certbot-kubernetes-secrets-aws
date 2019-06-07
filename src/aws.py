@@ -1,5 +1,6 @@
-import boto3, os, time
+import boto3, os, time, sys
 from function import notify
+from concurrent.futures import TimeoutError
 
 route53_client = boto3.client('route53')
 
@@ -92,7 +93,15 @@ def get_domains_hosted_zone(hosted_zones, domain):
     return (hosted_zone, domains)
 
 def get_hosted_zones():
-    hosted_zones = route53_client.list_hosted_zones()['HostedZones']
+    hosted_zones_list = []
+    response = route53_client.list_hosted_zones()
+    hosted_zones_list.append(response['HostedZones'])
+    while response['IsTruncated']:
+        next_marker = response['NextMarker']
+        response = route53_client.list_hosted_zones(Marker=next_marker)
+        hosted_zones_list.append(response['HostedZones'])
+
+    hosted_zones = [item for sublist in hosted_zones_list for item in sublist]
     hosted_zone_names = [zone['Name'].rstrip('.') for zone in hosted_zones]
     print('Found hostedzones: %s' % str(hosted_zone_names))
     return (hosted_zones, hosted_zone_names)
@@ -137,20 +146,17 @@ def remove_route53(tls_ingress, elb_hosted_zone):
             notify(message, 'danger')
             break
 
-        hosted_zone_name = hosted_zone['Name'].rstrip('.')
-        hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
         if len(domains) == 0:
-            domain_zone_name = hosted_zone_name
-            record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
-        elif len(domains) == 1:
-            domain_zone_name = domains[0] + '.' + hosted_zone_name
+            # delete a record without subdomain in hosted_zone
+            domain_zone_name = hosted_zone['Name'].rstrip('.')
             record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
         else:
-            message = 'No top zone found for domain %s in hosted zones %s' % (domain, hosted_zone_names)
-            notify(message, 'danger')
-            break
+            # delete a record with all subdomains in hosted_zone
+            domain_zone_name = '.'.join(domains) + '.' + hosted_zone['Name'].rstrip('.')
+            hosted_zone = record_hosted_zone(hosted_zone, domain_zone_name, 'empty', 'DELETE')
 
         # delete hosted zone when only NS and SOA are present
+        hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
         hosted_zone = route53_client.get_hosted_zone(Id=hosted_zone_id)['HostedZone']
         if hosted_zone['ResourceRecordSetCount'] <= 2:
             delete_hosted_zone(hosted_zone)

@@ -79,19 +79,23 @@ def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
         try:
             kubernetescorev1.create_namespaced_secret(namespace, secret)
         except Exception as e:
-            message = 'Failed at creating secret %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
+            message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
             notify(message, 'danger')
 
 def delete_certificate(ingress_name,secret_name,namespace):
     print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
     
-    try:
+    try: 
         kubernetescorev1.read_namespaced_secret(secret_name, namespace)
+    except Exception as e:
+        print('Certificate %s for %s in namespace %s not found' % (secret_name, ingress_name, namespace))
+        return
+        
+    try:
         kubernetescorev1.delete_namespaced_secret(secret_name, namespace)
     except Exception as e:
-        message = 'Failed at deleting secret %s for %s in namespace %s' % (secret_name, ingress_name, namespace)
+        message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
         notify(message, 'danger')
-        pass
 
 def request_certificate(ingress_domains,secret_name,namespace):
     print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
