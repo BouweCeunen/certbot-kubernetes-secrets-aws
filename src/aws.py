@@ -153,7 +153,7 @@ def remove_route53(tls_ingress, elb_hosted_zone):
         else:
             # delete a record with all subdomains in hosted_zone
             domain_zone_name = '.'.join(domains) + '.' + hosted_zone['Name'].rstrip('.')
-            hosted_zone = record_hosted_zone(hosted_zone, domain_zone_name, 'empty', 'DELETE')
+            hosted_zone = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
 
         # delete hosted zone when only NS and SOA are present
         hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
