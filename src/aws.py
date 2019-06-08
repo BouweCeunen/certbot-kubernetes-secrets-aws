@@ -173,8 +173,7 @@ def create_route53(tls_ingress, elb_hosted_zone):
             domain_zone_name = hosted_zone['Name'].rstrip('.')
             a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
         else:
-            # create all hosted zones and top level a record
-            # update hosted_zones after creation new hosted_zone
+            # create all hosted zones and top level a record, update hosted_zones after creation new hosted_zone
             for idx, domain in enumerate(reversed(domains)):
                 domain_zone_name = domain + '.' + hosted_zone['Name'].rstrip('.')
                 if (idx != len(domains)-1):

@@ -82,7 +82,7 @@ def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
             message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
             notify(message, 'danger')
 
-def delete_certificate(ingress_name,secret_name,namespace):
+def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
     print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
     
     try: 
@@ -95,6 +95,13 @@ def delete_certificate(ingress_name,secret_name,namespace):
         kubernetescorev1.delete_namespaced_secret(secret_name, namespace)
     except Exception as e:
         message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
+        notify(message, 'danger')
+
+    try:
+        os.remove(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem')
+        os.remove(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem')
+    except Exception as e:
+        message = 'Failed at deleting certificates on disk for %s: %s' % (ingress_name, str(e))
         notify(message, 'danger')
 
 def request_certificate(ingress_domains,secret_name,namespace):
@@ -127,4 +134,4 @@ def create_certificate(tls_ingress):
 def remove_certificate(tls_ingress):
     (ingress_name,namespace,secret_name,ingress_domains,_,_) = tls_ingress
     remove_letsencrypt_ingress(ingress_name, ingress_domains)
-    delete_certificate(ingress_name, secret_name, namespace)
+    delete_certificate(ingress_name, secret_name, namespace,ingress_domains)
