@@ -1,8 +1,8 @@
 import os 
 from kubernetes import client, config, utils, watch
 from certificate import create_certificate, remove_certificate
-from aws import create_route53, remove_route53, get_elb_hosted_zone
-from function import notify, get_kubernetes_domains_ingresses
+from aws import create_route53, remove_route53
+from function import notify, get_kubernetes_domains_ingresses, get_elb_hosted_zone
 
 config.load_incluster_config()
 kubernetesv1 = client.ExtensionsV1beta1Api()
@@ -42,5 +42,9 @@ for event in w.stream(kubernetesv1.list_ingress_for_all_namespaces, _request_tim
                 remove_route53(ingress, elb_hosted_zone)
             if tls is not None:
                 remove_certificate(ingress)
-
+    else:
+        if event['raw_object']['reason'] == 'Gone':
+            message = event['raw_object']['message']
+            resource_version = message[message.find("(")+1:message.find(")")]
+            
     update_last_resource_version(resource_version)

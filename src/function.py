@@ -1,4 +1,4 @@
-import os, requests
+import os, requests, boto3
 
 try:
     SLACK_WEBHOOK = os.environ['SLACK_WEBHOOK']
@@ -14,6 +14,27 @@ try:
     DEFAULT_ELB_REGION = os.environ['DEFAULT_ELB_REGION']
 except KeyError:
     DEFAULT_ELB_REGION = None
+
+
+def get_elb_hosted_zone(ingress):
+    (_,_,_,_,elb_region,elb_dns_name) = ingress
+
+    # no Route53 has to be done
+    if elb_region is None or elb_dns_name is None:
+        return None
+
+    application_load_balancers = boto3.client('elbv2', region_name=elb_region).describe_load_balancers()['LoadBalancers']
+    classic_load_balancers = boto3.client('elb', region_name=elb_region).describe_load_balancers()['LoadBalancerDescriptions']
+    load_balancers = application_load_balancers + classic_load_balancers
+    load_balancer_dns_names = [elb['DNSName'] for elb in load_balancers]
+
+    try:
+        index = load_balancer_dns_names.index(elb_dns_name)
+        return load_balancers[index]
+    except ValueError:
+        message = 'ELB with dns_name %s not found in region %s' % (elb_dns_name, elb_region)
+        notify(message, 'danger')
+        exit(1)
 
 def get_annotations(annotations):
     if annotations is None:
