@@ -49,26 +49,26 @@ def record_ns_records(domain_zone_name, hosted_zone, hosted_zones, action):
         record_ns_hosted_zone(lower_hosted_zone, domain_zone_name, name_servers, action)
 
 def record_ns_hosted_zone(hosted_zone, domain_zone_name, name_servers, action):
-    # try:
-    return route53_client.change_resource_record_sets(
-        HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
-        ChangeBatch={
-            'Changes': [
-                {
-                    'Action': action,
-                    'ResourceRecordSet': {
-                        'Name': domain_zone_name,
-                        'Type': 'NS',
-                        'ResourceRecords': [{'Value': name_server} for name_server in name_servers],
-                        'TTL': 300
+    try:
+        return route53_client.change_resource_record_sets(
+            HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
+            ChangeBatch={
+                'Changes': [
+                    {
+                        'Action': action,
+                        'ResourceRecordSet': {
+                            'Name': domain_zone_name,
+                            'Type': 'NS',
+                            'ResourceRecords': [{'Value': name_server} for name_server in name_servers],
+                            'TTL': 300
+                        }
                     }
-                }
-            ]
-        }
-    )
-    # except Exception:
-    #     print('No domain "%s" found in hostedzone "%s" to %s' % (domain_zone_name,hosted_zone['Name'].rstrip('.'),action))
-    #     return None
+                ]
+            }
+        )
+    except Exception:
+        print('No domain "%s" found in hostedzone "%s" to %s' % (domain_zone_name,hosted_zone['Name'].rstrip('.'),action))
+        return None
 
 def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
     print('%s domain "%s" in hostedzone "%s"' % (action, domain_zone_name,hosted_zone['Name'].rstrip('.')))
@@ -206,10 +206,6 @@ def remove_route53(tls_ingress, elb_hosted_zone):
             # delete a record without subdomain in hosted_zone
             domain_zone_name = hosted_zone['Name'].rstrip('.')
             record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
-            # # possible that it resides in lower level hosted_zone
-            # lower_hosted_zone = get_lower_hosted_zone(hosted_zones, domain)
-            # if lower_hosted_zone is not None:
-            #     record_hosted_zone(lower_hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
         else:
             # delete a record with all subdomains in hosted_zone
             domain_zone_name = '.'.join(domains) + '.' + hosted_zone['Name'].rstrip('.')
