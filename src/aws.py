@@ -1,6 +1,6 @@
 import boto3, os, time, sys
 from function import notify
-from aws_function import get_name_servers, wait_route53, get_domains_hosted_zone, get_hosted_zones
+from aws_function import get_name_servers, wait_route53, get_domains_hosted_zone, get_hosted_zones, get_lower_hosted_zone
 
 route53_client = boto3.client('route53')
 
@@ -31,8 +31,7 @@ def record_nameservers(domain_zone_name, hosted_zone, hosted_zones, action):
     # create/delete NS records in lower hosted_zone, get ns records current zone
     print('%s nameservers hostedzone "%s"' % (action,domain_zone_name))
     name_servers = get_name_servers(hosted_zone)
-    domain = '.'.join(domain_zone_name.split('.')[1:])
-    (lower_hosted_zone, _) = get_domains_hosted_zone(hosted_zones, domain)
+    lower_hosted_zone = get_lower_hosted_zone(hosted_zones, domain_zone_name)
     if lower_hosted_zone is not None:
         try:
             return route53_client.change_resource_record_sets(
@@ -131,7 +130,11 @@ def remove_route53(tls_ingress, elb_hosted_zone):
             record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
 
         # delete hosted zone when only NS and SOA are present
+        # go over each hosted zone until all unused hosted zones are cleared
         hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
         hosted_zone = route53_client.get_hosted_zone(Id=hosted_zone_id)['HostedZone']
-        if hosted_zone['ResourceRecordSetCount'] <= 2:
+        while hosted_zone['ResourceRecordSetCount'] <= 2:
             delete_hosted_zone(hosted_zone, hosted_zones)
+            (hosted_zones, _) = get_hosted_zones()
+            hosted_zone = get_lower_hosted_zone(hosted_zones, domain_zone_name)
+            domain_zone_name = hosted_zone['Name'].rstrip('.')

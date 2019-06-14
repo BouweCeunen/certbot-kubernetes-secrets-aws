@@ -4,6 +4,11 @@ from concurrent.futures import TimeoutError
 
 route53_client = boto3.client('route53')
 
+def get_lower_hosted_zone(hosted_zones, domain_zone_name):
+    domain = '.'.join(domain_zone_name.split('.')[1:])
+    (lower_hosted_zone, _) = get_domains_hosted_zone(hosted_zones, domain)
+    return lower_hosted_zone
+
 def get_domains_hosted_zone(hosted_zones, domain):
     domains = domain.split('.')
     hosted_zone = None

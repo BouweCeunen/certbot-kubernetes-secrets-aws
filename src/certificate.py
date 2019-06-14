@@ -2,6 +2,7 @@ from subprocess import call
 from kubernetes import client, config, utils, watch
 from function import notify
 import sys, time, base64, os
+import shutil
 
 EMAIL = os.environ['EMAIL']
 CURRENT_NAMESPACE = open('/var/run/secrets/kubernetes.io/serviceaccount/namespace').read()
@@ -97,12 +98,16 @@ def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
         message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
         notify(message, 'danger')
 
-    try:
-        os.remove(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem')
-        os.remove(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem')
-    except Exception as e:
-        message = 'Failed at deleting certificates on disk for %s: %s' % (ingress_name, str(e))
+    command = ('certbot delete --cert-name ' + ingress_domains[0]).split()
+    code = call(command, stdout=open('certbot_log', 'w'))
+    res = open('certbot_log', 'r').read()
+    print(res)
+    call('rm certbot_log'.split())
+
+    if code != 0 and "No certificate found" not in res:
+        message = 'Failed at deleting certificates on disk for %s' % (ingress_name)
         notify(message, 'danger')
+        return
 
 def request_certificate(ingress_domains,secret_name,namespace):
     print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
