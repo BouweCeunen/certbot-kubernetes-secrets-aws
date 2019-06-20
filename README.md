@@ -79,7 +79,7 @@ metadata:
     ingress.kubernetes.io/auth-type: forward
     ingress.kubernetes.io/auth-url: http://traefik-forward-auth.kube-system.svc.cluster.local
     ingress.kubernetes.io/auth-response-headers: X-Forwarded-User
-    certbot.kubernetes.secrets.aws/elb-dns-name: a4d9acea544d511e9aef50ae120ed3e3-483026455.us-east-1.elb.amazonaws.com
+    certbot.kubernetes.secrets.aws/elb-dns-name: ae501343b936711e989670a5adca4e2d-1999170429.us-east-1.elb.amazonaws.com
     certbot.kubernetes.secrets.aws/elb-region: us-east-1
 spec:
   rules:

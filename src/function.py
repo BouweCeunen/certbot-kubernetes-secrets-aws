@@ -34,7 +34,6 @@ def get_elb_hosted_zone(ingress):
     except ValueError:
         message = 'ELB with dns_name %s not found in region %s' % (elb_dns_name, elb_region)
         notify(message, 'danger')
-        exit(1)
 
 def get_annotations(annotations):
     if annotations is None:
