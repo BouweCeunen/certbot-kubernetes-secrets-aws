@@ -34,7 +34,8 @@ Attach following policy to your EC2 node role in IAM on AWS in order for Route53
                 "route53:ListHostedZones",
                 "route53:CreateHostedZone",
                 "route53:DeleteHostedZone",
-                "route53:GetHostedZone"
+                "route53:GetHostedZone",
+                "route53:ListResourceRecordSets"
             ],
             "Resource": [
                 "*"
