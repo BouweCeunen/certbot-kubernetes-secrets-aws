@@ -1,6 +1,6 @@
 import boto3, os, time, sys
 from function import notify
-from aws_function import get_name_servers, wait_route53, get_domains_hosted_zone, get_hosted_zones, get_lower_hosted_zone
+from aws_function import wait_route53, get_domains_hosted_zone, get_hosted_zones, get_lower_hosted_zone, get_alias_records
 
 route53_client = boto3.client('route53')
 
@@ -8,8 +8,6 @@ def delete_hosted_zone(hosted_zone, hosted_zones):
     hosted_zone_name = hosted_zone['Name'].rstrip('.')
     hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/','')
     
-    record_nameservers(hosted_zone_name, hosted_zone, hosted_zones, 'DELETE')
-
     print('Deleting hostedzone "%s"' % hosted_zone_name)
     deleted_hosted_zone = route53_client.delete_hosted_zone(
         Id=hosted_zone_id,
@@ -23,36 +21,7 @@ def create_hosted_zone(domain_zone_name, hosted_zones):
         CallerReference=str(time.time()),
     )['HostedZone']
 
-    record_nameservers(domain_zone_name, hosted_zone, hosted_zones, 'UPSERT')
-
     return hosted_zone
-
-def record_nameservers(domain_zone_name, hosted_zone, hosted_zones, action):
-    # create/delete NS records in lower hosted_zone, get ns records current zone
-    print('%s nameservers hostedzone "%s"' % (action,domain_zone_name))
-    name_servers = get_name_servers(hosted_zone)
-    lower_hosted_zone = get_lower_hosted_zone(hosted_zones, domain_zone_name)
-    if lower_hosted_zone is not None:
-        try:
-            return route53_client.change_resource_record_sets(
-                HostedZoneId=lower_hosted_zone['Id'].replace('/hostedzone/',''),
-                ChangeBatch={
-                    'Changes': [
-                        {
-                            'Action': action,
-                            'ResourceRecordSet': {
-                                'Name': domain_zone_name,
-                                'Type': 'NS',
-                                'ResourceRecords': [{'Value': name_server} for name_server in name_servers],
-                                'TTL': 300
-                            }
-                        }
-                    ]
-                }
-            )
-        except Exception:
-            print('No domain "%s" found in hostedzone "%s" to %s' % (domain_zone_name,hosted_zone['Name'].rstrip('.'),action))
-            return None
 
 def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
     print('%s domain "%s" in hostedzone "%s"' % (action, domain_zone_name,hosted_zone['Name'].rstrip('.')))
@@ -77,7 +46,7 @@ def record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, action):
             }
         )
     except Exception:
-        print('No domain "%s" found in hostedzone "%s" to %s' % (domain_zone_name,hosted_zone['Name'].rstrip('.'),action))
+        print('No domain "%s" found in hostedzone "%s" to %s with ELB %s' % (domain_zone_name,hosted_zone['Name'].rstrip('.'),action,elb_hosted_zone['DNSName']))
         return None
 
 def create_route53(tls_ingress, elb_hosted_zone):
@@ -92,14 +61,10 @@ def create_route53(tls_ingress, elb_hosted_zone):
             domain_zone_name = hosted_zone['Name'].rstrip('.')
             a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
         else:
-            # create all hosted zones and top level a record, update hosted_zones after creation new hosted_zone
-            for idx, domain in enumerate(reversed(domains)):
-                domain_zone_name = domain + '.' + hosted_zone['Name'].rstrip('.')
-                if (idx != len(domains)-1):
-                    hosted_zone = create_hosted_zone(domain_zone_name, hosted_zones)
-                    (hosted_zones, _) = get_hosted_zones()
-                else:
-                    a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
+            domain_zone_name = hosted_zone['Name'].rstrip('.')
+            for domain in reversed(domains):
+                domain_zone_name = domain + '.' + domain_zone_name
+            a_record_result = record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'UPSERT')
                 
         if a_record_result is not None:
             change_id = a_record_result['ChangeInfo']['Id'].replace('/change/', '')
@@ -128,6 +93,12 @@ def remove_route53(tls_ingress, elb_hosted_zone):
             # delete a record with all subdomains in hosted_zone
             domain_zone_name = '.'.join(domains) + '.' + hosted_zone['Name'].rstrip('.')
             record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+
+        # delete remnants in other hostedzones
+        for hz in hosted_zones:
+            for record in get_alias_records(hz):
+                if record == domain:
+                    record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
 
         # delete hosted zone when only NS and SOA are present
         # go over each hosted zone until all unused hosted zones are cleared

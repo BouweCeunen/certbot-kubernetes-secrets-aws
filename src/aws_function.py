@@ -54,10 +54,8 @@ def wait_route53(change_id, domain_zone_name):
     except TimeoutError:
         return False
 
-def get_name_servers(hosted_zone):
-    ns_record_sets = route53_client.list_resource_record_sets(
+def get_alias_records(hosted_zone):
+    record_sets = route53_client.list_resource_record_sets(
         HostedZoneId=hosted_zone['Id'].replace('/hostedzone/',''),
     )
-    resource_records_list = [record['ResourceRecords'] for record in ns_record_sets['ResourceRecordSets'] if record['Type'] == 'NS']
-    resource_records = [item['Value'] for sublist in resource_records_list for item in sublist]
-    return resource_records
+    return [record['Name'].rstrip('.') for record in record_sets['ResourceRecordSets'] if record['Type'] == 'A' and 'AliasTarget' in record]
