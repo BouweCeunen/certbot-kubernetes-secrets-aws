@@ -4,5 +4,5 @@ metadata:
   name: certbot
   namespace: default
 data:
-    EMAIL: bouwe.ceunen@gmail.com
-    SLACK_WEBHOOK: https://hooks.slack.com/services/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
+    EMAIL: <email>
+    SLACK_WEBHOOK: <webhook>
