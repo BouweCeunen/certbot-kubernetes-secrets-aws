@@ -1,12 +1,12 @@
 apiVersion: rbac.authorization.k8s.io/v1beta1
 kind: ClusterRoleBinding
 metadata:
-  name: certbot
+  name: certbot-aws
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: certbot
+  name: certbot-aws
 subjects:
 - kind: ServiceAccount
-  name: certbot
+  name: certbot-aws
   namespace: default

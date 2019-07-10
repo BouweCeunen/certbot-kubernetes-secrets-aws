@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: certbot
+  name: certbot-aws
   namespace: default
 data:
     EMAIL: <email>

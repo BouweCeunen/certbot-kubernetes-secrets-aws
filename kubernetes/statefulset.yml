@@ -2,26 +2,26 @@ apiVersion: apps/v1beta1
 kind: StatefulSet
 metadata:
   namespace: default
-  name: certbot
+  name: certbot-aws
   labels:
-    app: certbot
+    app: certbot-aws
 spec:
-  serviceName: certbot
+  serviceName: certbot-aws
   replicas: 1
   template:
     metadata:
       labels:
-        app: certbot
+        app: certbot-aws
     spec:
-      serviceAccountName: certbot
+      serviceAccountName: certbot-aws
       containers:
-      - name: certbot
+      - name: certbot-aws
         imagePullPolicy: Always
         image: bouwe/certbot-kubernetes-secrets-aws:1.2.0
         command: ['python','-u','watch.py']
         envFrom:
           - configMapRef:
-              name: certbot
+              name: certbot-aws
         ports:
         - name: web
           containerPort: 80
@@ -36,13 +36,13 @@ spec:
         volumeMounts:
         - name: data
           mountPath: /etc
-      - name: certbot-renewal
+      - name: certbot-aws-renewal
         imagePullPolicy: Always
         image: bouwe/certbot-kubernetes-secrets-aws:1.2.0
         command: ['python','-u','renew.py']
         envFrom:
           - configMapRef:
-              name: certbot
+              name: certbot-aws
         ports:
         - name: web
           containerPort: 80

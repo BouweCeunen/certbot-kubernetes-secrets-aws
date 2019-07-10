@@ -35,8 +35,8 @@ def create_letsencrypt_ingress(ingress_name,ingress_domains):
                     {
                         'path': '/.well-known/acme-challenge',
                         'backend': {
-                            'serviceName': 'certbot',
-                            'servicePort': 'certbot'
+                            'serviceName': 'certbot-aws',
+                            'servicePort': 'certbot-aws'
                         }
                     }
                 ]
