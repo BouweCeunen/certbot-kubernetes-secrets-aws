@@ -88,15 +88,14 @@ def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
     
     try: 
         kubernetescorev1.read_namespaced_secret(secret_name, namespace)
+        try:
+            kubernetescorev1.delete_namespaced_secret(secret_name, namespace)
+        except Exception as e:
+            message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
+            notify(message, 'danger')
+
     except Exception as e:
         print('Certificate %s for %s in namespace %s not found' % (secret_name, ingress_name, namespace))
-        return
-        
-    try:
-        kubernetescorev1.delete_namespaced_secret(secret_name, namespace)
-    except Exception as e:
-        message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
-        notify(message, 'danger')
 
     command = ('certbot delete --cert-name ' + ingress_domains[0]).split()
     code = call(command, stdout=open('certbot_log', 'w'))
