@@ -66,8 +66,9 @@ def get_kubernetes_domains_ingresses(event):
     annotations = event.metadata.annotations
     (elb_dns_name, elb_region) = get_annotations(annotations)
     ingress_domains = []
-    for h in event.spec.rules:
-        ingress_domains.append(h.host)
+    if event.spec.rules is not None:
+        for h in event.spec.rules:
+            ingress_domains.append(h.host)
     return (ingress_name,namespace,secret_name,ingress_domains,elb_region,elb_dns_name)
 
 def notify(message, color):
