@@ -27,24 +27,25 @@ for event in w.stream(kubernetesv1.list_ingress_for_all_namespaces, _request_tim
     resource_version = event['object'].metadata.resource_version
     print("==> Event %s: %s: %s" % (event_type,event_name,resource_version))
 
-    if event_type != 'ERROR':
-        ingress = get_kubernetes_domains_ingresses(event['object'])
-        tls = event['object'].spec.tls
-        if (event_type == 'ADDED' or event_type == 'MODIFIED'):
-            elb_hosted_zone = get_elb_hosted_zone(ingress)
-            if elb_hosted_zone is not None:
-                create_route53(ingress, elb_hosted_zone)
-            if tls is not None:
-                create_certificate(ingress)
-        if (event_type == 'DELETED'):
-            elb_hosted_zone = get_elb_hosted_zone(ingress)
-            if elb_hosted_zone is not None:
-                remove_route53(ingress, elb_hosted_zone)
-            if tls is not None:
-                remove_certificate(ingress)
-    else:
-        if event['raw_object']['reason'] == 'Gone':
-            message = event['raw_object']['message']
-            resource_version = message[message.find("(")+1:message.find(")")]
+    if event_type != None:
+        if event_type != 'ERROR':
+            ingress = get_kubernetes_domains_ingresses(event['object'])
+            tls = event['object'].spec.tls
+            if (event_type == 'ADDED' or event_type == 'MODIFIED'):
+                elb_hosted_zone = get_elb_hosted_zone(ingress)
+                if elb_hosted_zone is not None:
+                    create_route53(ingress, elb_hosted_zone)
+                if tls is not None:
+                    create_certificate(ingress)
+            if (event_type == 'DELETED'):
+                elb_hosted_zone = get_elb_hosted_zone(ingress)
+                if elb_hosted_zone is not None:
+                    remove_route53(ingress, elb_hosted_zone)
+                if tls is not None:
+                    remove_certificate(ingress)
+        else:
+            if event['raw_object']['reason'] == 'Gone':
+                message = event['raw_object']['message']
+                resource_version = message[message.find("(")+1:message.find(")")]
             
     update_last_resource_version(resource_version)
