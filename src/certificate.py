@@ -98,7 +98,8 @@ def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
         print('Certificate %s for %s in namespace %s not found' % (secret_name, ingress_name, namespace))
 
     command = ('certbot delete --cert-name ' + ingress_domains[0]).split()
-    code = call(command, stdout=open('certbot_log', 'w'))
+    output_file = open('certbot_log', 'w')
+    code = call(command, stdout=output_file, stderr=output_file)
     res = open('certbot_log', 'r').read()
     print(res)
     call('rm certbot_log'.split())
@@ -111,7 +112,8 @@ def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
 def request_certificate(ingress_domains,secret_name,namespace):
     print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
     command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
-    code = call(command, stdout=open('certbot_log', 'w'))
+    output_file = open('certbot_log', 'w')
+    code = call(command, stdout=output_file, stderr=output_file)
     res = open('certbot_log', 'r').read()
     print(res)
     call('rm certbot_log'.split())
