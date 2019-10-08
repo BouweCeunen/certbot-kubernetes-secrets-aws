@@ -14,7 +14,7 @@ except KeyError:
 try:
     STARTUP_SLEEP_TIME = os.environ['STARTUP_SLEEP_TIME']
 except KeyError:
-    STARTUP_SLEEP_TIME = 3600
+    STARTUP_SLEEP_TIME = 3600 # 1 hour default
 
 print('\n\nSleeping first for %s seconds to enable certbot to do its job with the ingresses first.\n\n' % STARTUP_SLEEP_TIME)
 time.sleep(STARTUP_SLEEP_TIME)
