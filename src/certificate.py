@@ -127,10 +127,10 @@ def request_certificate(ingress_domains,secret_name,namespace):
         message = 'Succesfully renewed certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
         notify(message, 'good')
 
-        cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
-        key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
-        
-        upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
+    cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
+    key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
+    
+    upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
 
 def create_certificate(tls_ingress):
     (ingress_name,namespace,secret_name,ingress_domains,_,_) = tls_ingress
