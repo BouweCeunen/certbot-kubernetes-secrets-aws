@@ -7,12 +7,12 @@ config.load_incluster_config()
 kubernetesv1 = client.ExtensionsV1beta1Api()
 
 try:
-    SLEEP_TIME = os.environ['SLEEP_TIME']
+    SLEEP_TIME = int(os.environ['SLEEP_TIME'])
 except KeyError:
     SLEEP_TIME = 604800 # 1 week default
 
 try:
-    STARTUP_SLEEP_TIME = os.environ['STARTUP_SLEEP_TIME']
+    STARTUP_SLEEP_TIME = int(os.environ['STARTUP_SLEEP_TIME'])
 except KeyError:
     STARTUP_SLEEP_TIME = 3600 # 1 hour default
 
