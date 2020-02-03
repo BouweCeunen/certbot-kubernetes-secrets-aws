@@ -1,4 +1,4 @@
-# certbot-kubernetes-secrets-aws
+# Certbot Kubernetes Secrets AWS
 Obtains Let's Encrypt certificates, pushes these as Secrets on Kubernetes for Ingresses and creates Route53 entries in AWS.
 
 Feel free to read about this with some more details on [Medium](https://medium.com/axons/essential-kubernetes-tools-94503209d1cb).
