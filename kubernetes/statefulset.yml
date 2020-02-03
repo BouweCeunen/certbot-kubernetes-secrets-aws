@@ -17,7 +17,7 @@ spec:
       containers:
       - name: certbot-aws
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets-aws:1.2.6
+        image: bouwe/certbot-kubernetes-secrets-aws:1.2.7
         command: ['python','-u','watch.py']
         envFrom:
           - configMapRef:
@@ -38,7 +38,7 @@ spec:
           mountPath: /etc
       - name: certbot-aws-renewal
         imagePullPolicy: Always
-        image: bouwe/certbot-kubernetes-secrets-aws:1.2.6
+        image: bouwe/certbot-kubernetes-secrets-aws:1.2.7
         command: ['python','-u','renew.py']
         envFrom:
           - configMapRef:
