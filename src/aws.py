@@ -4,15 +4,14 @@ from aws_function import wait_route53, get_domains_hosted_zone, get_hosted_zones
 
 route53_client = boto3.client('route53')
 
-def delete_hosted_zone(hosted_zone, hosted_zones):
-	hosted_zone_name = hosted_zone['Name'].rstrip('.')
-	hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/','')
-	
-	print('Deleting hostedzone "%s"' % hosted_zone_name)
-	deleted_hosted_zone = route53_client.delete_hosted_zone(
-		Id=hosted_zone_id,
-	)
-	return deleted_hosted_zone
+# def delete_hosted_zone(hosted_zone, hosted_zones):
+# 	hosted_zone_name = hosted_zone['Name'].rstrip('.')
+# 	hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/','')
+# 	print('Deleting hostedzone "%s"' % hosted_zone_name)
+# 	deleted_hosted_zone = route53_client.delete_hosted_zone(
+# 		Id=hosted_zone_id,
+# 	)
+# 	return deleted_hosted_zone
 
 def create_hosted_zone(domain_zone_name, hosted_zones):
 	print('Creating hostedzone "%s"' % domain_zone_name)
@@ -106,10 +105,10 @@ def remove_route53(tls_ingress, elb_hosted_zone):
 
 		# delete hosted zone when only NS and SOA are present
 		# go over each hosted zone until all unused hosted zones are cleared
-		hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
-		hosted_zone = route53_client.get_hosted_zone(Id=hosted_zone_id)['HostedZone']
-		while hosted_zone['ResourceRecordSetCount'] <= 2:
-			delete_hosted_zone(hosted_zone, hosted_zones)
-			(hosted_zones, _) = get_hosted_zones()
-			hosted_zone = get_lower_hosted_zone(hosted_zones, domain_zone_name)
-			domain_zone_name = hosted_zone['Name'].rstrip('.')
+		# hosted_zone_id = hosted_zone['Id'].replace('/hostedzone/', '')
+		# hosted_zone = route53_client.get_hosted_zone(Id=hosted_zone_id)['HostedZone']
+		# while hosted_zone['ResourceRecordSetCount'] <= 2:
+		# 	delete_hosted_zone(hosted_zone, hosted_zones)
+		# 	(hosted_zones, _) = get_hosted_zones()
+		# 	hosted_zone = get_lower_hosted_zone(hosted_zones, domain_zone_name)
+		# 	domain_zone_name = hosted_zone['Name'].rstrip('.')
