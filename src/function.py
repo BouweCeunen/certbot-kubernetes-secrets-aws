@@ -68,7 +68,8 @@ def get_kubernetes_domains_ingresses(event):
   ingress_domains = []
   if event.spec.rules is not None:
     for h in event.spec.rules:
-      ingress_domains.append(h.host)
+      if h.host is not None:
+        ingress_domains.append(h.host)
   return (ingress_name,namespace,secret_name,ingress_domains,elb_region,elb_dns_name)
 
 def notify(message, color):
