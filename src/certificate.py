@@ -12,7 +12,7 @@ config.load_incluster_config()
 kubernetesv1 = client.ExtensionsV1beta1Api()
 kubernetescorev1 = client.CoreV1Api()
 
-def remove_letsencrypt_ingress(ingress_name,ingress_domains):
+def remove_letsencrypt_ingress(ingress_name, ingress_domains):
   print('Removing ingress %s for Let\'s Encrypt if it does exist for %s' % (ingress_name,str(ingress_domains)))
   ingress_name = ingress_name + '-letsencrypt'
 
@@ -22,7 +22,7 @@ def remove_letsencrypt_ingress(ingress_name,ingress_domains):
   except Exception as e:
     pass
 
-def create_letsencrypt_ingress(ingress_name,ingress_domains):
+def create_letsencrypt_ingress(ingress_name, ingress_domains):
   print('Creating ingress %s for Let\'s Encrypt if it does not exist for %s' % (ingress_name,str(ingress_domains)))
   ingress_name = ingress_name + '-letsencrypt'
 
@@ -59,7 +59,7 @@ def create_letsencrypt_ingress(ingress_name,ingress_domains):
   except Exception as e:
     kubernetesv1.create_namespaced_ingress(CURRENT_NAMESPACE, ingress)
     
-def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
+def upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains):
   print('Uploading certificate for %s in namespace %s with secretName %s' % (str(ingress_domains),namespace,secret_name))
 
   secret = {
@@ -68,8 +68,8 @@ def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
     },
     'type': 'kubernetes.io/tls',
     'data': {
-      'tls.crt': base64.b64encode(cert),
-      'tls.key': base64.b64encode(key)
+      'tls.crt': base64.b64encode(cert.encode()).decode(),
+      'tls.key': base64.b64encode(key.encode()).decode()
     }
   }
   
@@ -83,7 +83,7 @@ def upload_cert_to_kubernetes(cert,key,secret_name,namespace,ingress_domains):
       message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
       notify(message, 'danger')
 
-def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
+def delete_certificate(ingress_name, secret_name, namespace, ingress_domains):
   print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
   
   try: 
@@ -109,7 +109,7 @@ def delete_certificate(ingress_name,secret_name,namespace,ingress_domains):
     notify(message, 'danger')
     return
 
-def request_certificate(ingress_domains,secret_name,namespace):
+def request_certificate(ingress_domains, secret_name, namespace):
   print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
   command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
   output_file = open('certbot_log', 'w')
