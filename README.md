@@ -15,7 +15,7 @@ The configmap contains environment variables which can be used to configure Slac
 
 * EMAIL
 * SLACK_WEBHOOK
-* DEAULT_ELB_DNS_NAME
+* DEFAULT_ELB_DNS_NAME
 * DEAULT_ELB_REGION
 * SLEEP_TIME
 * STARTUP_SLEEP_TIME

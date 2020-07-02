@@ -6,9 +6,9 @@ except KeyError:
   SLACK_WEBHOOK = None
 
 try:
-  DEAULT_ELB_DNS_NAME = os.environ['DEAULT_ELB_DNS_NAME']
+  DEFAULT_ELB_DNS_NAME = os.environ['DEFAULT_ELB_DNS_NAME']
 except KeyError:
-  DEAULT_ELB_DNS_NAME = None
+  DEFAULT_ELB_DNS_NAME = None
 
 try:
   DEFAULT_ELB_REGION = os.environ['DEFAULT_ELB_REGION']
@@ -44,8 +44,8 @@ def get_annotations(annotations):
 
   # first set default (if defaults were set)
   # will be overwritten when annotations are set on ingresses
-  if DEAULT_ELB_DNS_NAME is not None:
-    elb_dns_name = DEAULT_ELB_DNS_NAME
+  if DEFAULT_ELB_DNS_NAME is not None:
+    elb_dns_name = DEFAULT_ELB_DNS_NAME
   if DEFAULT_ELB_REGION is not None:
     elb_region = DEFAULT_ELB_REGION
 
