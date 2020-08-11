@@ -44,7 +44,7 @@ for event in w.stream(kubernetesv1.list_ingress_for_all_namespaces, _request_tim
         if tls is not None:
           remove_certificate(ingress)
     else:
-      if event['raw_object']['reason'] == 'Gone' or event['raw_object']['reason'] == 'Expired' :
+      if event['raw_object']['reason'] == 'Gone' or event['raw_object']['reason'] == 'Expired':
         message = event['raw_object']['message']
         resource_version = message[message.find("(")+1:message.find(")")]
 
