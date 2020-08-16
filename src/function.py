@@ -75,7 +75,7 @@ def get_kubernetes_domains_ingresses(event):
 def notify(message, color):
   print(message)
   json = {
-    "username": "certbot-kubernetes-secrets-aws", 
+    "username": "certbot-kubernetes-secrets-aws",
     "icon_emoji": ":dart:",
     "attachments": [
       {
