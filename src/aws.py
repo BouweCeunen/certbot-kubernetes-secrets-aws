@@ -126,17 +126,29 @@ def remove_route53(tls_ingress, elb_hosted_zone):
     if len(domains) == 0:
       # delete a record without subdomain in hosted_zone
       domain_zone_name = hosted_zone['Name'].rstrip('.')
-      record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+      # only apply CloudFront CNAME to www
+      if cloud_front is not None and 'www' in domain_zone_name:
+        record_cname_hosted_zone(hosted_zone, domain_zone_name, cloud_front, 'DELETE')
+      else:
+        record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
     else:
       # delete a record with all subdomains in hosted_zone
       domain_zone_name = '.'.join(domains) + '.' + hosted_zone['Name'].rstrip('.')
-      record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+      # only apply CloudFront CNAME to www
+      if cloud_front is not None and 'www' in domain_zone_name:
+        record_cname_hosted_zone(hosted_zone, domain_zone_name, cloud_front, 'DELETE')
+      else:
+        record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
 
     # delete remnants in other hostedzones
     for hz in hosted_zones:
       for record in get_alias_records(hz):
         if record == domain:
-          record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
+          # only apply CloudFront CNAME to www
+          if cloud_front is not None and 'www' in domain_zone_name:
+            record_cname_hosted_zone(hosted_zone, domain_zone_name, cloud_front, 'DELETE')
+          else:
+            record_hosted_zone(hosted_zone, domain_zone_name, elb_hosted_zone, 'DELETE')
 
     # delete hosted zone when only NS and SOA are present
     # go over each hosted zone until all unused hosted zones are cleared

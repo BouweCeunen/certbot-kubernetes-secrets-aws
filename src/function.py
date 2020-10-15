@@ -37,7 +37,7 @@ def get_elb_hosted_zone(ingress):
 
 def get_annotations(annotations):
   if annotations is None:
-    return (None, None)
+    return (None, None, None)
 
   elb_dns_name = None
   elb_region = None
