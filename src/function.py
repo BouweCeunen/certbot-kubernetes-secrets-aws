@@ -17,7 +17,7 @@ except KeyError:
 
 
 def get_elb_hosted_zone(ingress):
-  (_,_,_,_,elb_region,elb_dns_name) = ingress
+  (_,_,_,_,elb_region,elb_dns_name,_) = ingress
 
   # no Route53 has to be done
   if elb_region is None or elb_dns_name is None:
@@ -41,6 +41,7 @@ def get_annotations(annotations):
 
   elb_dns_name = None
   elb_region = None
+  cloud_front = None
 
   # first set default (if defaults were set)
   # will be overwritten when annotations are set on ingresses
@@ -53,8 +54,10 @@ def get_annotations(annotations):
     elb_dns_name = annotations['certbot.kubernetes.secrets.aws/elb-dns-name']
   if 'certbot.kubernetes.secrets.aws/elb-region' in annotations:
     elb_region = annotations['certbot.kubernetes.secrets.aws/elb-region']
+  if 'certbot.kubernetes.secrets.aws/cloud-front' in annotations:
+    cloud_front = annotations['certbot.kubernetes.secrets.aws/cloud-front']
 
-  return (elb_dns_name, elb_region)
+  return (elb_dns_name, elb_region, cloud_front)
   
 def get_kubernetes_domains_ingresses(event):
   ingress_name = event.metadata.name
@@ -64,13 +67,13 @@ def get_kubernetes_domains_ingresses(event):
     secret_name = None
   namespace = event.metadata.namespace
   annotations = event.metadata.annotations
-  (elb_dns_name, elb_region) = get_annotations(annotations)
+  (elb_dns_name, elb_region, cloud_front) = get_annotations(annotations)
   ingress_domains = []
   if event.spec.rules is not None:
     for h in event.spec.rules:
       if h.host is not None:
         ingress_domains.append(h.host)
-  return (ingress_name,namespace,secret_name,ingress_domains,elb_region,elb_dns_name)
+  return (ingress_name, namespace, secret_name, ingress_domains, elb_region, elb_dns_name, cloud_front)
 
 def notify(message, color):
   print(message)

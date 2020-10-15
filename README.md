@@ -69,8 +69,11 @@ Slack notifications are sent when something goes wrong and if a certificate has 
 Several annotations need to be present on the Ingress in order to set Route53 records. 
 * certbot.kubernetes.secrets.aws/elb-dns-name
 * certbot.kubernetes.secrets.aws/elb-region
+* certbot.kubernetes.secrets.aws/cloud-front
 
 Certificates are requested when the 'tls' annotation with a secretName is present on the Ingress.
+
+Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annotation will get a CNAME record with the CloudFront url on each "www" domain name. CNAME's are not suitable to be set on apex domain names.
 
 ```
 kind: Ingress
@@ -82,6 +85,7 @@ metadata:
     ingress.kubernetes.io/ssl-redirect: 'true'
     certbot.kubernetes.secrets.aws/elb-dns-name: <dns_name_elb>
     certbot.kubernetes.secrets.aws/elb-region: us-east-1
+    certbot.kubernetes.secrets.aws/cloud-front: us-east-1
 spec:
   rules:
   - host: cluster.k8s.bouweceunen.com
