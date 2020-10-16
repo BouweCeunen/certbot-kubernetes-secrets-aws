@@ -2,7 +2,10 @@ import boto3, os, time, sys
 from function import notify
 from aws_function import wait_route53, get_domains_hosted_zone, get_hosted_zones, get_lower_hosted_zone, get_alias_records
 
+CERTS_BASE_PATH = '/etc/letsencrypt/live'
+
 route53_client = boto3.client('route53')
+acm_client = boto3.client('acm', region_name='us-east-1')
 
 # def delete_hosted_zone(hosted_zone, hosted_zones):
 # 	hosted_zone_name = hosted_zone['Name'].rstrip('.')
@@ -73,6 +76,46 @@ def record_cname_hosted_zone(hosted_zone, domain_zone_name, cloud_front, action)
     )
   except Exception as e:
     print('No domain "%s" found in hostedzone "%s" to %s with CloudFront %s: %s' % (domain_zone_name, hosted_zone['Name'].rstrip('.'), action, cloud_front, str(e)))
+    return None
+
+def certificate_acm(domain_zone_name, action):
+  print('%s certificate for domain "%s"' % (action, domain_zone_name))
+  try:
+    issued_certificates = acm_client.list_certificates(
+      CertificateStatuses=[
+          'ISSUED',
+      ],
+    )
+    domain_cert = [certificate for certificate in issued_certificates['CertificateSummaryList'] if certificate['DomainName'] == domain_zone_name]
+    if action == 'UPSERT':
+      chain = open(CERTS_BASE_PATH + '/' + domain_zone_name + '/fullchain.pem', 'r').read()
+      priv = open(CERTS_BASE_PATH + '/' + domain_zone_name + '/privkey.pem', 'r').read()
+      cert = open(CERTS_BASE_PATH + '/' + domain_zone_name + '/cert.pem', 'r').read()
+
+      if len(domain_cert) != 0:
+        cert_arn = domain_cert[0]['CertificateArn']
+        return acm_client.import_certificate(
+            CertificateArn=cert_arn,
+            Certificate=str.encode(cert),
+            PrivateKey=str.encode(priv),
+            CertificateChain=str.encode(chain),
+        )
+      else:
+        return acm_client.import_certificate(
+            Certificate=str.encode(cert),
+            PrivateKey=str.encode(priv),
+            CertificateChain=str.encode(chain),
+        )
+    elif action == 'DELETE':
+      pass
+      # not yet supported, needs additional CloudFront logic to remove certificate there also
+      # if len(domain_cert) != 0:
+      #   cert_arn = domain_cert['CertificateArn']
+      # return acm_client.delete_certificate(
+      #     CertificateArn=cert_arn
+      # )
+  except Exception as e:
+    print('Importing certificate for domain "%s" failed: %s' % (domain_zone_name, str(e)))
     return None
 
 def create_route53(tls_ingress, elb_hosted_zone):

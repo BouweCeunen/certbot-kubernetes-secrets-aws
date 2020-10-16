@@ -53,6 +53,16 @@ Attach following policy to your EC2 node role in IAM on AWS in order for Route53
             "Resource": [
                 "*"
             ]
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "acm:ImportCertificate"
+            ],
+            "Resource": [
+                "*"
+            ]
         }
     ]
 }
@@ -73,7 +83,7 @@ Several annotations need to be present on the Ingress in order to set Route53 re
 
 Certificates are requested when the 'tls' annotation with a secretName is present on the Ingress.
 
-Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annotation will get a CNAME record with the CloudFront url on each "www" domain name. CNAME's are not suitable to be set on apex domain names.
+Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annotation will get a CNAME record with the CloudFront url on each "www" domain name. CNAME's are not suitable to be set on apex domain names. Certificate will be uploaded to ACM on AWS and will be renewed. Initial CloudFront setup is still needed.
 
 ```
 kind: Ingress

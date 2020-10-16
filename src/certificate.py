@@ -1,6 +1,7 @@
 from subprocess import call
 from kubernetes import client, config, utils, watch
 from function import notify
+from aws import certificate_acm
 import sys, time, base64, os
 import shutil
 
@@ -83,7 +84,7 @@ def upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains
       message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
       notify(message, 'danger')
 
-def delete_certificate(ingress_name, secret_name, namespace, ingress_domains):
+def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front):
   print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
   
   try: 
@@ -104,12 +105,15 @@ def delete_certificate(ingress_name, secret_name, namespace, ingress_domains):
   print(res)
   call('rm certbot_log'.split())
 
+  if cloud_front is not None:
+    certificate_acm(ingress_domains[0], 'DELETE')
+
   if code != 0 and "No certificate found" not in res:
     message = 'Failed at deleting certificates on disk for %s' % (ingress_name)
     notify(message, 'danger')
     return
 
-def request_certificate(ingress_domains, secret_name, namespace):
+def request_certificate(ingress_domains, secret_name, namespace, cloud_front):
   print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
   command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
   output_file = open('certbot_log', 'w')
@@ -129,15 +133,17 @@ def request_certificate(ingress_domains, secret_name, namespace):
 
   cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
   key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
-  
+
   upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
+  if cloud_front is not None:
+    certificate_acm(ingress_domains[0], 'UPSERT')
 
 def create_certificate(tls_ingress):
-  (ingress_name,namespace,secret_name,ingress_domains,_,_,_) = tls_ingress
+  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front) = tls_ingress
   create_letsencrypt_ingress(ingress_name, ingress_domains)
-  request_certificate(ingress_domains, secret_name, namespace)
+  request_certificate(ingress_domains, secret_name, namespace, cloud_front)
 
 def remove_certificate(tls_ingress):
-  (ingress_name,namespace,secret_name,ingress_domains,_,_,_) = tls_ingress
+  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front) = tls_ingress
   remove_letsencrypt_ingress(ingress_name, ingress_domains)
-  delete_certificate(ingress_name, secret_name, namespace,ingress_domains)
+  delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front)
