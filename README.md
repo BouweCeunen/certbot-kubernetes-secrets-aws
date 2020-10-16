@@ -95,7 +95,7 @@ metadata:
     ingress.kubernetes.io/ssl-redirect: 'true'
     certbot.kubernetes.secrets.aws/elb-dns-name: <dns_name_elb>
     certbot.kubernetes.secrets.aws/elb-region: us-east-1
-    certbot.kubernetes.secrets.aws/cloud-front: us-east-1
+    certbot.kubernetes.secrets.aws/cloud-front: *.cloudfront.net
 spec:
   rules:
   - host: cluster.k8s.bouweceunen.com
