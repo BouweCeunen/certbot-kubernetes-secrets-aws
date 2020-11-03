@@ -1,5 +1,5 @@
 # Certbot Kubernetes Secrets AWS
-Obtains Let's Encrypt certificates, pushes these as Secrets on Kubernetes for Ingresses and creates Route53 entries in AWS.
+Obtains Let's Encrypt certificates, pushes these as Secrets on Kubernetes for Ingresses and creates Route53 entries in AWS. If you have a static served website on S3 behind CloudFront, it's also possible to manage Route53 and renew certificates for those.
 
 Feel free to read about this with some more details on [Medium](https://medium.com/axons/essential-kubernetes-tools-94503209d1cb).
 
