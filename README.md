@@ -106,7 +106,7 @@ spec:
           serviceName: example-host
           servicePort: web
   tls:
-  - secretName: cluster-cert
+  - secretName: example-cert
 ```
 
 ## TODO
