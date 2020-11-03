@@ -89,8 +89,8 @@ Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annota
 kind: Ingress
 apiVersion: extensions/v1beta1
 metadata:
-  name: cluster-ingress
-  namespace: kube-system
+  name: example-ingress
+  namespace: example
   annotations:
     ingress.kubernetes.io/ssl-redirect: 'true'
     certbot.kubernetes.secrets.aws/elb-dns-name: <dns_name_elb>
@@ -98,12 +98,12 @@ metadata:
     certbot.kubernetes.secrets.aws/cloud-front: *.cloudfront.net
 spec:
   rules:
-  - host: cluster.k8s.bouweceunen.com
+  - host: host.example.com
     http:
       paths:
       - path: /
         backend:
-          serviceName: kubernetes-dashboard
+          serviceName: example-host
           servicePort: web
   tls:
   - secretName: cluster-cert
