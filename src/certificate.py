@@ -113,11 +113,19 @@ def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cl
     notify(message, 'danger')
     return
 
-def request_certificate(ingress_domains, secret_name, namespace, cloud_front):
+def request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3_bucket):
   print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
-  command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
+
+  # need custom logic to put challenge on S3
+  if cloud_front is not None and s3_bucket is not None:
+    env = {'S3_BUCKET': s3_bucket}
+    command = ('certbot certonly --agree-tos --manual --manual-public-ip-logging-ok --preferred-challenges http -n -m ' + EMAIL + ' --manual-auth-hook=/s3-push.sh --manual-cleanup-hook=/s3-cleanup.sh --expand -d ' + ' -d '.join(ingress_domains)).split()
+  else:
+    env = {}
+    command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
+
   output_file = open('certbot_log', 'w')
-  code = call(command, stdout=output_file, stderr=output_file)
+  code = call(command, stdout=output_file, stderr=output_file, env=env)
   res = open('certbot_log', 'r').read()
   print(res)
   call('rm certbot_log'.split())
@@ -139,9 +147,9 @@ def request_certificate(ingress_domains, secret_name, namespace, cloud_front):
     certificate_acm(ingress_domains[0], 'UPSERT')
 
 def create_certificate(tls_ingress):
-  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front) = tls_ingress
+  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front,s3_bucket) = tls_ingress
   create_letsencrypt_ingress(ingress_name, ingress_domains)
-  request_certificate(ingress_domains, secret_name, namespace, cloud_front)
+  request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3_bucket)
 
 def remove_certificate(tls_ingress):
   (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front) = tls_ingress

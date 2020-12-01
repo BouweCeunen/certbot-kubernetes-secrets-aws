@@ -63,6 +63,19 @@ Attach following policy to your EC2 node role in IAM on AWS in order for Route53
             "Resource": [
                 "*"
             ]
+        },
+        {
+            "Sid": "",
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:PutObjectACL",
+                "s3:DeleteObject"
+            ],
+            "Resource": [
+                "arn:aws:s3:::*/.well-known/acme-challenge/*"
+            ]
         }
     ]
 }
@@ -80,10 +93,11 @@ Several annotations need to be present on the Ingress in order to set Route53 re
 * certbot.kubernetes.secrets.aws/elb-dns-name
 * certbot.kubernetes.secrets.aws/elb-region
 * certbot.kubernetes.secrets.aws/cloud-front
+* certbot.kubernetes.secrets.aws/s3-bucket
 
 Certificates are requested when the 'tls' annotation with a secretName is present on the Ingress.
 
-Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annotation will get a CNAME record with the CloudFront url on each "www" domain name. CNAME's are not suitable to be set on apex domain names. Certificate will be uploaded to ACM on AWS and will be renewed. Initial CloudFront setup is still needed.
+Ingresses annotated with the `certbot.kubernetes.secrets.aws/cloud-front` annotation will get a CNAME record with the CloudFront url on each "www" domain name. CNAME's are not suitable to be set on apex domain names. Certificate will be uploaded to ACM on AWS and will be renewed. Initial CloudFront setup and deletion is still needed. Annotation `certbot.kubernetes.secrets.aws/s3-bucket` has to be the corresponding bucket from which the files are hosted behind CloudFront. Both need to be present in order to successfully renew certificates.
 
 ```
 kind: Ingress
@@ -112,3 +126,4 @@ spec:
 ## TODO
 * option to turn on json logging
 * don't upsert Route53 record if already exists
+* remove certificate from ACM if cert removal

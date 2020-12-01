@@ -79,7 +79,7 @@ def record_cname_hosted_zone(hosted_zone, domain_zone_name, cloud_front, action)
     return None
 
 def certificate_acm(domain_zone_name, action):
-  print('%s certificate for domain "%s"' % (action, domain_zone_name))
+  print('%s certificate to ACM for domain "%s"' % (action, domain_zone_name))
   try:
     issued_certificates = acm_client.list_certificates(
       CertificateStatuses=[
