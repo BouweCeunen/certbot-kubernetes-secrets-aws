@@ -84,7 +84,7 @@ def upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains
       message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
       notify(message, 'danger')
 
-def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front):
+def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front, s3_bucket):
   print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
   
   try: 
@@ -152,6 +152,6 @@ def create_certificate(tls_ingress):
   request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3_bucket)
 
 def remove_certificate(tls_ingress):
-  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front) = tls_ingress
+  (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front,s3_bucket) = tls_ingress
   remove_letsencrypt_ingress(ingress_name, ingress_domains)
-  delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front)
+  delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front, s3_bucket)

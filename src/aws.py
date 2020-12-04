@@ -119,7 +119,7 @@ def certificate_acm(domain_zone_name, action):
     return None
 
 def create_route53(tls_ingress, elb_hosted_zone):
-  (_,_,_,ingress_domains,_,_,cloud_front) = tls_ingress
+  (_,_,_,ingress_domains,_,_,cloud_front,_) = tls_ingress
 
   # longest first, top down approach
   for domain in reversed(sorted(ingress_domains, key = lambda s: len(s.split('.')))):
@@ -155,7 +155,7 @@ def create_route53(tls_ingress, elb_hosted_zone):
         notify(message, 'danger')
 
 def remove_route53(tls_ingress, elb_hosted_zone):
-  (_,_,_,ingress_domains,_,_,cloud_front) = tls_ingress
+  (_,_,_,ingress_domains,_,_,cloud_front,_) = tls_ingress
 
   # longest first, top down approach
   for domain in reversed(sorted(ingress_domains, key = lambda s: len(s.split('.')))):
