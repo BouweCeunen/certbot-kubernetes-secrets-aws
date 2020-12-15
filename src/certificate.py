@@ -84,9 +84,30 @@ def upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains
       message = 'Failed at creating secret %s for %s in namespace %s: %s' % (secret_name, str(ingress_domains), namespace, str(e))
       notify(message, 'danger')
 
+def execute_certbot_deletion(ingress_domain, ingress_name):
+  command = ('certbot delete --cert-name ' + ingress_domain).split()
+  output_file = open('certbot_log', 'w')
+  code = call(command, stdout=output_file, stderr=output_file)
+  res = open('certbot_log', 'r').read()
+  print(res)
+  call('rm certbot_log'.split())
+
+  if code != 0 and "No certificate found" not in res:
+    message = 'Failed at deleting certificates on disk for %s' % (ingress_name)
+    notify(message, 'danger')
+    return
+
 def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cloud_front, s3_bucket):
   print('Removing certificate %s for %s in namespace %s' % (secret_name, ingress_name, namespace))
-  
+
+  if cloud_front is not None:
+    # remove from ACM/certbot
+    first_domain = [domain for domain in ingress_domains if 'www.' in domain][0]
+    certificate_acm(first_domain, 'DELETE')
+    execute_certbot_deletion(first_domain, ingress_name)
+
+  # remove from Kubernetes/certbot
+  first_domain = [domain for domain in ingress_domains if 'www.' not in domain][0]
   try: 
     kubernetescorev1.read_namespaced_secret(secret_name, namespace)
     try:
@@ -94,34 +115,14 @@ def delete_certificate(ingress_name, secret_name, namespace, ingress_domains, cl
     except Exception as e:
       message = 'Failed at deleting secret %s for %s in namespace %s: %s' % (secret_name, ingress_name, namespace, str(e))
       notify(message, 'danger')
-
   except Exception as e:
     print('Certificate %s for %s in namespace %s not found' % (secret_name, ingress_name, namespace))
+  execute_certbot_deletion(first_domain, ingress_name)
 
-  command = ('certbot delete --cert-name ' + ingress_domains[0]).split()
-  output_file = open('certbot_log', 'w')
-  code = call(command, stdout=output_file, stderr=output_file)
-  res = open('certbot_log', 'r').read()
-  print(res)
-  call('rm certbot_log'.split())
-
-  if cloud_front is not None:
-    certificate_acm(ingress_domains[0], 'DELETE')
-
-  if code != 0 and "No certificate found" not in res:
-    message = 'Failed at deleting certificates on disk for %s' % (ingress_name)
-    notify(message, 'danger')
-    return
-
-def request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3_bucket):
-  print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
-
-  # need custom logic to put challenge on S3
-  if cloud_front is not None and s3_bucket is not None:
-    env = {'S3_BUCKET': s3_bucket}
+def execute_certbot_request(ingress_domains, secret_name, namespace, cloud_front, env, manual):
+  if manual:
     command = ('certbot certonly --agree-tos --manual --manual-public-ip-logging-ok --preferred-challenges http -n -m ' + EMAIL + ' --manual-auth-hook=/s3-push.sh --manual-cleanup-hook=/s3-cleanup.sh --expand -d ' + ' -d '.join(ingress_domains)).split()
   else:
-    env = {}
     command = ('certbot certonly --agree-tos --standalone --preferred-challenges http -n -m ' + EMAIL + ' --expand -d ' + ' -d '.join(ingress_domains)).split()
 
   output_file = open('certbot_log', 'w')
@@ -139,12 +140,26 @@ def request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3
     message = 'Succesfully renewed certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace)
     notify(message, 'good')
 
-  cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
-  key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
+  # manual certificates need to go to ACM, standalone to Kubernetes 
+  if manual:
+    if cloud_front is not None:
+      certificate_acm(ingress_domains[0], 'UPSERT')
+  else:
+    cert = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/fullchain.pem', 'r').read()
+    key = open(CERTS_BASE_PATH + '/' + ingress_domains[0] + '/privkey.pem', 'r').read()
 
-  upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
-  if cloud_front is not None:
-    certificate_acm(ingress_domains[0], 'UPSERT')
+    upload_cert_to_kubernetes(cert, key, secret_name, namespace, ingress_domains)
+
+def request_certificate(ingress_domains, secret_name, namespace, cloud_front, s3_bucket):
+  print('Requesting certificate %s for %s in namespace %s' % (secret_name, str(ingress_domains), namespace))
+
+  # need custom logic to put challenge on S3
+  if cloud_front is not None and s3_bucket is not None:
+    # first do the apex domains with standalone certbot, second do non-apex domain with manual verification
+    execute_certbot_request([domain for domain in ingress_domains if 'www.' not in domain], secret_name, namespace, cloud_front, {}, False)
+    execute_certbot_request([domain for domain in ingress_domains if 'www.' in domain], secret_name, namespace, cloud_front, {'S3_BUCKET': s3_bucket}, True)
+  else:
+    execute_certbot_request(ingress_domains, secret_name, namespace, cloud_front, {}, False)
 
 def create_certificate(tls_ingress):
   (ingress_name,namespace,secret_name,ingress_domains,_,_,cloud_front,s3_bucket) = tls_ingress
