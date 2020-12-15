@@ -109,7 +109,9 @@ metadata:
     ingress.kubernetes.io/ssl-redirect: 'true'
     certbot.kubernetes.secrets.aws/elb-dns-name: <dns_name_elb>
     certbot.kubernetes.secrets.aws/elb-region: us-east-1
+    # only needed for cloudfront hosted content
     certbot.kubernetes.secrets.aws/cloud-front: *.cloudfront.net
+    certbot.kubernetes.secrets.aws/s3-bucket: bucket-name
 spec:
   rules:
   - host: host.example.com
